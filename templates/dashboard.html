@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>SecureAttendX - Admin Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- 🎨 Theme and Layout -->
+    <style>
+      :root {
+        --bg: #f4f4f4;
+        --text: #222;
+        --card: #fff;
+        --btn: #007bff;
+        --btn-text: #fff;
+      }
+
+      body.dark {
+        --bg: #121212;
+        --text: #eee;
+        --card: #1f1f1f;
+        --btn: #1e88e5;
+        --btn-text: #fff;
+      }
+
+      body {
+        background-color: var(--bg);
+        color: var(--text);
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+      }
+
+      .header {
+        background-color: var(--card);
+        padding: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #ccc;
+      }
+
+      .header h1 {
+        margin: 0;
+      }
+
+      .theme-toggle {
+        cursor: pointer;
+        font-size: 1.3rem;
+        margin-left: 1rem;
+      }
+
+      .container {
+        padding: 2rem;
+      }
+
+      .buttons {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: 2rem;
+      }
+
+      button {
+        background-color: var(--btn);
+        color: var(--btn-text);
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1rem;
+      }
+
+      canvas {
+        margin-top: 2rem;
+      }
+    </style>
+
+    <!-- 📦 DataTables CSS + ChartJS -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+  </head>
+  <body>
+    <div class="header">
+      <h1>SecureAttendX Dashboard</h1>
+      <div>
+        <span>👤 {{ admin_name }}</span>
+        <span class="theme-toggle" onclick="toggleTheme()">☀️</span>
+      </div>
+    </div>
+
+    <div class="container">
+      <!-- 🧭 Action Buttons -->
+      <div class="buttons">
+        <form action="/start-attendance" method="POST">
+          <button type="submit">📋 Start Attendance</button>
+        </form>
+        <form action="/add-student" method="GET">
+          <button type="submit">👥 Manage Students</button>
+        </form>
+        <form action="/notify" method="POST">
+          <button type="submit">📧 Notify Absent</button>
+        </form>
+      </div>
+
+      <!-- 📊 Attendance Chart -->
+      <h2>Today's Attendance</h2>
+      <canvas id="attendanceChart" width="400" height="180"></canvas>
+
+      <!-- 👥 Student Table -->
+      <h2 style="margin-top: 3rem">Registered Students</h2>
+      <table id="studentsTable" class="display" style="width: 100%">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for student in students %}
+          <tr>
+            <td>{{ student.id }}</td>
+            <td>{{ student.name }}</td>
+            <td>{{ student.email }}</td>
+            <td>
+              <form
+                action="/edit-student/{{ student.id }}"
+                method="GET"
+                style="display: inline"
+              >
+                <button>Edit</button>
+              </form>
+              <form
+                action="/delete-student/{{ student.id }}"
+                method="POST"
+                style="display: inline"
+              >
+                <button onclick="return confirm('Delete this student?')">
+                  Delete
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="4">No students found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 🌗 Theme + Table + Chart Script -->
+    <script>
+      function toggleTheme() {
+          document.body.classList.toggle("dark");
+          const icon = document.querySelector(".theme-toggle");
+          icon.textContent = document.body.classList.contains("dark") ? "🌙" : "☀️";
+      }
+
+      $(document).ready(function () {
+          $('#studentsTable').DataTable();
+      });
+
+      const ctx = document.getElementById('attendanceChart').getContext('2d');
+      const attendanceChart = new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+              labels: ['Present', 'Absent'],
+              datasets: [{
+                  label: "Today's Attendance",
+                  data: [{{ present_count|default(0) }}, {{ absent_count|default(0) }}],
+                  backgroundColor: ['#28a745', '#dc3545']
+              }]
+          },
+          options: {
+              responsive: true,
+              plugins: {
+                  legend: {
+                      position: 'bottom'
+                  }
+              }
+          }
+      });
+    </script>
+  </body>
+</html>
