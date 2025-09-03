@@ -1,5 +1,59 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>Register - smartAttendX</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <script
+      src="https://kit.fontawesome.com/4e5dfafbd1.js"
+      crossorigin="anonymous"
+    ></script>
+  </head>
+  <body class="auth-body">
+    <div class="auth-container">
+      <!-- Left Panel -->
+      <div class="auth-info">
+        <h1>Create Account</h1>
+        <p>
+          Join thousands of institutions already using <span>smartAttendX</span>
+        </p>
+        <img
+          src="{{ url_for('static', filename='image.png') }}"
+          alt="illustration"
+        />
+      </div>
+
+      <!-- Right Panel -->
+      <div class="auth-form">
+        <h2>Register</h2>
+        <form id="registerForm">
+          <div class="input-group">
+            <i class="fas fa-user"></i>
+            <input type="text" id="reg-name" required placeholder="Full Name" />
+          </div>
+          <div class="input-group">
+            <i class="fas fa-envelope"></i>
+            <input type="email" id="reg-email" required placeholder="Email" />
+          </div>
+          <div class="input-group">
+            <i class="fas fa-lock"></i>
+            <input
+              type="password"
+              id="reg-password"
+              required
+              placeholder="Password"
+            />
+          </div>
+          <button type="submit" class="btn primary btn-block">Register</button>
+        </form>
+        <p class="alt-link">
+          Already have an account?
+          <a href="{{ url_for('login_page') }}">Login here</a>
+        </p>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -39,25 +93,39 @@
         <button class="social-btn"><i class="fab fa-google"></i> Google</button>
         <button class="social-btn"><i class="fab fa-microsoft"></i> Microsoft</button>
       </div>
-      <p class="alt-link">Already have an account? <a href="login.html">Login here</a></p>
     </div>
-  </div>
-  <script>
-document.getElementById("registerForm").addEventListener("submit", async function(e){
-  e.preventDefault();
-  const name = document.getElementById("reg-name").value;
-  const email = document.getElementById("reg-email").value;
-  const password = document.getElementById("reg-password").value;
 
-  const res = await fetch("http://localhost:5000/register", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, email, password })
-  });
-  const data = await res.json();
-  alert(data.success || data.error);
-});
-</script>
+    <script>
+      // Attach after DOM is loaded
+      document.addEventListener("DOMContentLoaded", function () {
+        const form = document.getElementById("registerForm");
 
-</body>
+        form.addEventListener("submit", async function (e) {
+          e.preventDefault();
+
+          const name = document.getElementById("reg-name").value;
+          const email = document.getElementById("reg-email").value;
+          const password = document.getElementById("reg-password").value;
+
+          try {
+            const res = await fetch("/register", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name, email, password }),
+            });
+
+            const data = await res.json();
+            alert(data.success || data.error);
+
+            if (data.success) {
+              window.location.href = "/login-page";
+            }
+          } catch (err) {
+            alert("❌ Registration failed. Check console.");
+            console.error(err);
+          }
+        });
+      });
+    </script>
+  </body>
 </html>
