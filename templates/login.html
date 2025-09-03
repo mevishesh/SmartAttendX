@@ -1,5 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
+<<<<<<< HEAD
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>Login - smartAttendX</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <script
+      src="https://kit.fontawesome.com/4e5dfafbd1.js"
+      crossorigin="anonymous"
+    ></script>
+  </head>
+  <body class="auth-body">
+    <div class="auth-container">
+      <!-- Left Panel -->
+      <div class="auth-info">
+        <h1>Welcome Back!</h1>
+        <p>
+          Manage attendance smartly and securely with <span>smartAttendX</span>
+        </p>
+        <img
+          src="{{ url_for('static', filename='image.png') }}"
+          alt="illustration"
+        />
+      </div>
+
+      <!-- Right Panel -->
+      <div class="auth-form">
+        <h2>Login</h2>
+        <form id="loginForm">
+          <div class="input-group">
+            <i class="fas fa-envelope"></i>
+            <input type="email" id="login-email" required placeholder="Email" />
+          </div>
+          <div class="input-group">
+            <i class="fas fa-lock"></i>
+            <input
+              type="password"
+              id="login-password"
+              required
+              placeholder="Password"
+            />
+          </div>
+          <button type="submit" class="btn primary btn-block">Login</button>
+        </form>
+
+        <p class="alt-link">
+          Don’t have an account?
+          <a href="{{ url_for('register_page') }}">Register here</a>
+        </p>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -35,30 +87,39 @@
         <button class="social-btn"><i class="fab fa-google"></i> Google</button>
         <button class="social-btn"><i class="fab fa-microsoft"></i> Microsoft</button>
       </div>
-      <p class="alt-link">Don’t have an account? <a href="register.html">Register here</a></p>
     </div>
-  </div>
-  <script>
-document.getElementById("loginForm").addEventListener("submit", async function(e){
-  e.preventDefault();
-  const email = document.getElementById("login-email").value;
-  const password = document.getElementById("login-password").value;
 
-  const res = await fetch("http://localhost:5000/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password })
-  });
-  const data = await res.json();
-  if(data.success){
-    alert("✅ " + data.success);
-    // Redirect to dashboard.html later
-    window.location.href = "dashboard.html";
-  } else {
-    alert("❌ " + data.error);
-  }
-});
-</script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const form = document.getElementById("loginForm");
 
-</body>
+        form.addEventListener("submit", async function (e) {
+          e.preventDefault();
+
+          const email = document.getElementById("login-email").value;
+          const password = document.getElementById("login-password").value;
+
+          try {
+            const res = await fetch("/login", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email, password }),
+              credentials: "include", // ✅ ensures Flask session cookie
+            });
+
+            const data = await res.json();
+            if (data.success) {
+              alert("✅ " + data.success);
+              window.location.href = "/dashboard";
+            } else {
+              alert("❌ " + (data.error || "Unknown error"));
+            }
+          } catch (err) {
+            alert("⚠️ Request failed. See console.");
+            console.error("Login error:", err);
+          }
+        });
+      });
+    </script>
+  </body>
 </html>
