@@ -1,5 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
+<<<<<<< HEAD
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>smartAttendX - Smart Attendance Solution</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <script
+      src="https://kit.fontawesome.com/4e5dfafbd1.js"
+      crossorigin="anonymous"
+    ></script>
+  </head>
+  <body>
+    <!-- Navbar -->
+    <nav class="navbar">
+      <div class="logo">smartAttendX</div>
+      <ul class="nav-links">
+        <li><a href="#about">About</a></li>
+        <li><a href="#features">Features</a></li>
+        <li><a href="#testimonials">Testimonials</a></li>
+        <li><a href="#contact">Contact</a></li>
+        <li><a href="{{ url_for('login_page') }}">Login</a></li>
+        <li><a href="{{ url_for('register_page') }}">Register</a></li>
+      </ul>
+    </nav>
+=======
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -44,75 +72,166 @@
       <li><i class="fas fa-sync"></i> Easy integration with existing systems</li>
     </ul>
   </section>
+>>>>>>> a4bcbcd2128f51f266284d3835cbfc4db21c973b
 
-  <!-- Features -->
-  <section class="features" id="features">
-    <h2>Key Features</h2>
-    <div class="features-grid">
-      <div class="feature-card">
-        <i class="fas fa-fingerprint"></i>
-        <h3>Biometric Attendance</h3>
-        <p>Ensure 100% accuracy with fingerprint/face recognition.</p>
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="hero-content">
+        <h1 class="fade-in">
+          Revolutionize Your Attendance with <span>smartAttendX</span>
+        </h1>
+        <p class="fade-in delay">
+          The smart, secure, and efficient way to manage attendance for schools,
+          colleges, and workplaces. Powered by AI, biometrics, and cloud
+          integration.
+        </p>
+        <div class="hero-buttons fade-in delay2">
+          <a href="{{ url_for('login_page') }}" class="btn primary"
+            >Get Started</a
+          >
+          <a href="{{ url_for('register_page') }}" class="btn secondary"
+            >Create Account</a
+          >
+        </div>
       </div>
-      <div class="feature-card">
-        <i class="fas fa-cloud"></i>
-        <h3>Cloud-Based</h3>
-        <p>Access data anytime, anywhere, securely stored in the cloud.</p>
-      </div>
-      <div class="feature-card">
-        <i class="fas fa-bell"></i>
-        <h3>Instant Notifications</h3>
-        <p>Get real-time alerts for absentees, late arrivals, or irregularities.</p>
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- Testimonials -->
-  <section class="testimonials">
-    <h2>What Our Clients Say</h2>
-    <div class="testimonial-grid">
-      <div class="testimonial-card">
-        <p>“smartAttendX has made our attendance tracking effortless. The analytics are a game-changer!”</p>
-        <span>- College Admin</span>
+    <!-- About Section -->
+    <section class="about" id="about">
+      <h2>About Us</h2>
+      <p>
+        At <strong>smartAttendX</strong>, we believe that managing attendance
+        should be effortless, secure, and insightful. Our platform combines
+        advanced biometric recognition, AI-based analytics, and cloud storage to
+        give organizations complete control over attendance tracking.
+      </p>
+      <ul>
+        <li>
+          <i class="fas fa-lock"></i> Secure user authentication with encryption
+        </li>
+        <li>
+          <i class="fas fa-robot"></i> Automated biometric tracking (Face +
+          RFID)
+        </li>
+        <li>
+          <i class="fas fa-chart-line"></i> Real-time dashboards and analytics
+        </li>
+        <li><i class="fas fa-bell"></i> Instant notifications for absentees</li>
+        <li>
+          <i class="fas fa-mobile-alt"></i> Mobile-friendly responsive design
+        </li>
+        <li>
+          <i class="fas fa-sync"></i> Seamless integration with existing systems
+        </li>
+      </ul>
+    </section>
+
+    <!-- Features -->
+    <section class="features" id="features">
+      <h2>Key Features</h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <i class="fas fa-fingerprint"></i>
+          <h3>Biometric Attendance</h3>
+          <p>Face and voice recognition ensure high accuracy and security.</p>
+        </div>
+        <div class="feature-card">
+          <i class="fas fa-cloud"></i>
+          <h3>Cloud-Based</h3>
+          <p>Access data anywhere, anytime with secure cloud storage.</p>
+        </div>
+        <div class="feature-card">
+          <i class="fas fa-bell"></i>
+          <h3>Instant Notifications</h3>
+          <p>
+            Parents/HR are notified instantly about absentees or late arrivals.
+          </p>
+        </div>
+        <div class="feature-card">
+          <i class="fas fa-users-cog"></i>
+          <h3>Admin Dashboard</h3>
+          <p>
+            Manage students/employees, generate reports, and view statistics.
+          </p>
+        </div>
+        <div class="feature-card">
+          <i class="fas fa-database"></i>
+          <h3>Analytics & Reports</h3>
+          <p>
+            Detailed reports for performance, absentee trends, and compliance.
+          </p>
+        </div>
+        <div class="feature-card">
+          <i class="fas fa-mobile-alt"></i>
+          <h3>Mobile Ready</h3>
+          <p>
+            Optimized for smartphones and tablets for easy access on the go.
+          </p>
+        </div>
       </div>
-      <div class="testimonial-card">
-        <p>“No more manual registers. Our employees love the quick biometric check-in.”</p>
-        <span>- HR Manager</span>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="testimonials" id="testimonials">
+      <h2>What Our Clients Say</h2>
+      <div class="testimonial-grid">
+        <div class="testimonial-card">
+          <p>
+            “smartAttendX has transformed our school’s attendance system.
+            Parents love the instant notifications.”
+          </p>
+          <span>- School Principal</span>
+        </div>
+        <div class="testimonial-card">
+          <p>
+            “We reduced manual errors and saved hours of admin work every week.
+            Highly recommend smartAttendX!”
+          </p>
+          <span>- HR Manager</span>
+        </div>
+        <div class="testimonial-card">
+          <p>
+            “Real-time analytics and cloud access make it easy for our college
+            to track attendance trends.”
+          </p>
+          <span>- College Administrator</span>
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- Contact -->
-  <section class="contact" id="contact">
-    <h2>Get in Touch</h2>
-    <form class="contact-form">
-      <input type="text" placeholder="Your Name" required>
-      <input type="email" placeholder="Your Email" required>
-      <textarea placeholder="Your Message" required></textarea>
-      <button type="submit" class="btn primary">Send Message</button>
-    </form>
-  </section>
+    <!-- Contact -->
+    <section class="contact" id="contact">
+      <h2>Get in Touch</h2>
+      <form class="contact-form">
+        <input type="text" placeholder="Your Name" required />
+        <input type="email" placeholder="Your Email" required />
+        <textarea placeholder="Your Message" required></textarea>
+        <button type="submit" class="btn primary">Send Message</button>
+      </form>
+    </section>
 
-  <!-- Call to Action -->
-  <section class="cta">
-    <h2>Ready to get started?</h2>
-    <a href="register.html" class="btn primary">Create an Account</a>
-    <a href="login.html" class="btn secondary">Login</a>
-  </section>
+    <!-- Call to Action -->
+    <section class="cta">
+      <h2>Ready to get started?</h2>
+      <a href="{{ url_for('register_page') }}" class="btn primary"
+        >Create an Account</a
+      >
+      <a href="{{ url_for('login_page') }}" class="btn secondary">Login</a>
+    </section>
 
-  <!-- Footer -->
-  <footer>
-    <div class="footer-links">
-      <a href="#about">About</a> | 
-      <a href="#features">Features</a> | 
-      <a href="#contact">Contact</a>
-    </div>
-    <div class="socials">
-      <a href="#"><i class="fab fa-facebook"></i></a>
-      <a href="#"><i class="fab fa-twitter"></i></a>
-      <a href="#"><i class="fab fa-linkedin"></i></a>
-    </div>
-    <p>&copy; 2025 smartAttendX. All rights reserved.</p>
-  </footer>
-</body>
+    <!-- Footer -->
+    <footer>
+      <div class="footer-links">
+        <a href="#about">About</a> | <a href="#features">Features</a> |
+        <a href="#testimonials">Testimonials</a> |
+        <a href="#contact">Contact</a>
+      </div>
+      <div class="socials">
+        <a href="#"><i class="fab fa-facebook"></i></a>
+        <a href="#"><i class="fab fa-twitter"></i></a>
+        <a href="#"><i class="fab fa-linkedin"></i></a>
+      </div>
+      <p>&copy; 2025 smartAttendX. All rights reserved.</p>
+    </footer>
+  </body>
 </html>
