@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 import sqlite3
 import os
 import subprocess
@@ -16,157 +16,128 @@ def is_logged_in():
     return 'admin_id' in session
 
 
-# ✅ Home route (login page)
-@app.route('/', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
+# ✅ API Login (used by login.html fetch)
+@app.route('/login', methods=['POST'])
+def api_login():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute("SELECT * FROM admins WHERE email = ? AND password = ?", (email, password))
+    admin = c.fetchone()
+    conn.close()
+
+    if admin:
+        session['admin_id'] = admin['id']
+        session['admin_name'] = admin['name']
+        return jsonify({"success": "Login successful"})
+    else:
+        return jsonify({"error": "Invalid credentials"}), 401
+
+
+# ✅ API Register (used by register.html fetch)
+
+@app.route('/register', methods=['POST'])
+def api_register():
+    try:
+        data = request.get_json()
+        name = data.get('name')
+        email = data.get('email')
+        password = data.get('password')
 
         conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
         c = conn.cursor()
-        c.execute("SELECT * FROM admins WHERE email = ? AND password = ?", (email, password))
-        admin = c.fetchone()
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS admins (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                email TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL
+            )
+        """)  # ✅ ensure table exists
+
+        c.execute("INSERT INTO admins (name, email, password) VALUES (?, ?, ?)",
+                  (name, email, password))
+        conn.commit()
         conn.close()
 
-        if admin:
-            session['admin_id'] = admin['id']
-            session['admin_name'] = admin['name']
-            return redirect(url_for('dashboard'))
-        else:
-            return "❌ Invalid credentials"
+        return jsonify({"success": "Account created successfully!"})
+
+    except Exception as e:
+        print("❌ Registration error:", str(e))  # log in backend console
+        return jsonify({"error": "Registration failed: " + str(e)})
+
+
+# ✅ Serve login page (GET)
+@app.route('/login-page', methods=['GET'])
+def login_page():
     return render_template('login.html')
+
+
+# ✅ Serve register page (GET)
+@app.route('/register-page', methods=['GET'])
+def register_page():
+    return render_template('register.html')
+
+
+# ✅ Landing page
+@app.route('/')
+def home():
+    return render_template('index.html')
 
 
 # ✅ Dashboard with chart and student list
 @app.route('/dashboard')
 def dashboard():
     if not is_logged_in():
-        return redirect(url_for('login'))
+        return redirect(url_for('login_page'))
 
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
 
-    # Get student list
-    c.execute("SELECT * FROM students WHERE admin_id = ?", (session['admin_id'],))
+    # ✅ Get all students (no admin filter)
+    c.execute("SELECT * FROM students")
     students = c.fetchall()
 
-    # Attendance chart counts
+    # ✅ Attendance stats
     today = datetime.now().strftime("%Y-%m-%d")
 
-    c.execute("SELECT COUNT(*) FROM attendance WHERE date = ? AND admin_id = ?", (today, session['admin_id']))
+    c.execute("SELECT COUNT(*) FROM attendance WHERE date = ?", (today,))
     present_count = c.fetchone()[0]
 
-    c.execute("SELECT COUNT(*) FROM students WHERE admin_id = ?", (session['admin_id'],))
+    c.execute("SELECT COUNT(*) FROM students")
     total_students = c.fetchone()[0]
     absent_count = total_students - present_count
 
     conn.close()
 
-    return render_template('dashboard.html',
-                           students=students,
-                           admin_name=session['admin_name'],
-                           present_count=present_count,
-                           absent_count=absent_count)
+    return render_template(
+        'dashboard.html',
+        students=students,
+        admin_name=session.get('admin_name', 'Admin'),
+        present_count=present_count,
+        absent_count=absent_count
+    )
 
 
-# ✅ Logout route
+# ✅ Logout
 @app.route('/logout')
 def logout():
     session.clear()
-    return redirect(url_for('login'))
+    return redirect(url_for('login_page'))
 
 
-# ✅ Start face-based attendance (calls recognizer.py)
+# ✅ Start face-based attendance
 @app.route('/start-attendance', methods=['POST'])
 def start_attendance():
     if not is_logged_in():
-        return redirect(url_for('login'))
-    
+        return redirect(url_for('login_page'))
+
     subprocess.Popen(['python', 'face_recognition/recognizer.py'])
-    return redirect(url_for('dashboard'))
-
-
-# ✅ Add Student (Form)
-@app.route('/add-student', methods=['GET'])
-def add_student_form():
-    if not is_logged_in():
-        return redirect(url_for('login'))
-    return render_template('add_student.html')
-
-
-# ✅ Add Student (Submit)
-@app.route('/add-student', methods=['POST'])
-def add_student():
-    if not is_logged_in():
-        return redirect(url_for('login'))
-
-    name = request.form['name']
-    email = request.form['email']
-
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("INSERT INTO students (name, email, admin_id) VALUES (?, ?, ?)", (name, email, session['admin_id']))
-    conn.commit()
-    conn.close()
-    return redirect(url_for('dashboard'))
-
-
-# ✅ Edit Student Form
-@app.route('/edit-student/<int:id>', methods=['GET'])
-def edit_student(id):
-    if not is_logged_in():
-        return redirect(url_for('login'))
-
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    c = conn.cursor()
-    c.execute("SELECT * FROM students WHERE id = ?", (id,))
-    student = c.fetchone()
-    conn.close()
-    return render_template('edit_student.html', student=student)
-
-
-# ✅ Update Student
-@app.route('/edit-student/<int:id>', methods=['POST'])
-def update_student(id):
-    if not is_logged_in():
-        return redirect(url_for('login'))
-
-    name = request.form['name']
-    email = request.form['email']
-
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("UPDATE students SET name = ?, email = ? WHERE id = ?", (name, email, id))
-    conn.commit()
-    conn.close()
-    return redirect(url_for('dashboard'))
-
-
-# ✅ Delete Student
-@app.route('/delete-student/<int:id>', methods=['POST'])
-def delete_student(id):
-    if not is_logged_in():
-        return redirect(url_for('login'))
-
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("DELETE FROM students WHERE id = ?", (id,))
-    conn.commit()
-    conn.close()
-    return redirect(url_for('dashboard'))
-
-
-# ✅ Notify absent students via email
-@app.route('/notify', methods=['POST'])
-def notify_absent():
-    if not is_logged_in():
-        return redirect(url_for('login'))
-    
-    subprocess.Popen(['python', 'email_notifier.py'])
     return redirect(url_for('dashboard'))
 
 
