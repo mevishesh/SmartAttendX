@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Attendance History - {{ student.name }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 2rem;
+      }
+      h2 {
+        margin-bottom: 1rem;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+      }
+      th,
+      td {
+        border: 1px solid #ccc;
+        padding: 0.7rem;
+        text-align: left;
+      }
+      th {
+        background: #007bff;
+        color: white;
+      }
+      .present {
+        color: green;
+        font-weight: bold;
+      }
+      .absent {
+        color: red;
+        font-weight: bold;
+      }
+      a {
+        display: inline-block;
+        margin-top: 1rem;
+        text-decoration: none;
+        padding: 0.5rem 1rem;
+        background: #007bff;
+        color: white;
+        border-radius: 5px;
+      }
+      a:hover {
+        background: #0056b3;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Attendance History: {{ student.name }} ({{ student.roll_no }})</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for record in records %}
+        <tr>
+          <td>{{ record.date }}</td>
+          <td class="{{ record.status|lower }}">{{ record.status }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="2">No attendance records found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <a href="{{ url_for('dashboard') }}">⬅ Back to Dashboard</a>
+  </body>
+</html>
