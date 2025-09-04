@@ -21,10 +21,10 @@
         <p>
           Manage attendance smartly and securely with <span>smartAttendX</span>
         </p>
-        <img
-          src="{{ url_for('static', filename='image.png') }}"
-          alt="illustration"
-        />
+        <img src="{{ url_for('static', filename='images/logo.png') }}" 
+     alt="App Logo" 
+     class="logo">
+
       </div>
 
       <!-- Right Panel -->
@@ -84,7 +84,7 @@
 
             const data = await res.json();
             if (data.success) {
-              alert("✅ " + data.success);
+              
               window.location.href = "/dashboard";
             } else {
               alert("❌ " + (data.error || "Invalid login"));

@@ -10,6 +10,10 @@ app.secret_key = "your-secret-key"
 # Database path
 DB_PATH = os.path.join(os.path.dirname(__file__), "database", "database.db")
 
+# Upload folder
+UPLOAD_FOLDER = os.path.join("static", "uploads")
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
 
 # ---------- Database Helper ----------
 def init_db():
@@ -17,13 +21,14 @@ def init_db():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
 
-    # Admins table
+    # Admins table (⚡ added profile_pic column)
     c.execute("""
         CREATE TABLE IF NOT EXISTS admins (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             email TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL
+            password TEXT NOT NULL,
+            profile_pic TEXT
         )
     """)
 
@@ -67,12 +72,73 @@ def is_logged_in():
 
 
 # ---------- Routes ----------
+@app.route("/update-profile", methods=["POST"])
+def update_profile():
+    if not is_logged_in():
+        return redirect(url_for("login_page"))
+
+    name = request.form.get("name")
+    email = request.form.get("email")
+    profile_pic = request.files.get("profile_pic")
+
+    pic_path = None
+    if profile_pic and profile_pic.filename != "":
+        filename = f"profile_{session['admin_id']}.png"
+        pic_path = f"uploads/{filename}"   # force forward slash
+  
+
+        profile_pic.save(os.path.join("static", pic_path))  # save into static/uploads
+
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+
+    if pic_path:
+        c.execute("UPDATE admins SET name = ?, email = ?, profile_pic = ? WHERE id = ?",
+                  (name, email, pic_path, session["admin_id"]))
+    else:
+        c.execute("UPDATE admins SET name = ?, email = ? WHERE id = ?",
+                  (name, email, session["admin_id"]))
+
+    conn.commit()
+    conn.close()
+
+    # Update session
+    session["admin_name"] = name
+
+    return redirect(url_for("profile"))
+
+
+# Profile Page
+@app.route("/profile")
+def profile():
+    if not is_logged_in():
+        return redirect(url_for("login_page"))
+
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute("SELECT * FROM admins WHERE id = ?", (session["admin_id"],))
+    admin = c.fetchone()
+    conn.close()
+
+    return render_template("profile.html", admin=admin)
+
 
 # Landing Page
 @app.route("/")
 def home():
     return render_template("index.html")
 
+
+    # Update session too
+    session["admin_name"] = name
+
+    # Save uploaded profile picture if exists
+    if profile_pic:
+        pic_path = os.path.join("static", f"profile_{session['admin_id']}.png")
+        profile_pic.save(pic_path)
+
+    return redirect(url_for("profile"))
 
 # Login API
 @app.route("/login", methods=["POST"])
@@ -149,6 +215,13 @@ def dashboard():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
+    # Fetch the current admin from DB
+    c.execute("SELECT * FROM admins WHERE id = ?", (session["admin_id"],))
+    admin = c.fetchone()
+    conn.close()
+
+    # Pass admin to template
+    return render_template("dashboard.html", admin=admin)
 
     # Get all students of this admin
     c.execute("SELECT * FROM students WHERE admin_id = ?", (session["admin_id"],))
@@ -263,3 +336,5 @@ def attendance_history(student_id):
 # ---------- Main ----------
 if __name__ == "__main__":
     app.run(debug=True)
+
+
