@@ -47,20 +47,22 @@
           <button type="submit" class="btn primary btn-block">Login</button>
         </form>
 
+        <div class="social-login">
+          <p>Or continue with</p>
+          <button class="social-btn">
+            <i class="fab fa-google"></i> Google
+          </button>
+          <button class="social-btn">
+            <i class="fab fa-microsoft"></i> Microsoft
+          </button>
+        </div>
+
         <p class="alt-link">
           Don’t have an account?
           <a href="{{ url_for('register_page') }}">Register here</a>
         </p>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Login - smartAttendX</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="https://kit.fontawesome.com/4e5dfafbd1.js" crossorigin="anonymous"></script>
-</head>
-<body class="auth-body">
-  <div class="auth-container">
-   
+      </div>
+    </div>
 
     <script>
       document.addEventListener("DOMContentLoaded", function () {
@@ -77,7 +79,7 @@
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ email, password }),
-              credentials: "include", // ✅ ensures Flask session cookie
+              credentials: "include", // ✅ ensures Flask session cookie is saved
             });
 
             const data = await res.json();
@@ -85,10 +87,10 @@
               alert("✅ " + data.success);
               window.location.href = "/dashboard";
             } else {
-              alert("❌ " + (data.error || "Unknown error"));
+              alert("❌ " + (data.error || "Invalid login"));
             }
           } catch (err) {
-            alert("⚠️ Request failed. See console.");
+            alert("⚠️ Request failed. Check console.");
             console.error("Login error:", err);
           }
         });
@@ -96,4 +98,3 @@
     </script>
   </body>
 </html>
-
