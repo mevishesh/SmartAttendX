@@ -4,8 +4,29 @@ import os
 import subprocess
 from datetime import datetime
 
+from flask_mail import Mail, Message
+
+
+
+
 app = Flask(__name__)
 app.secret_key = "your-secret-key"
+
+
+#Mail configuration
+
+
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = "smartattendx@gmail.com"   # sender Gmail
+app.config['MAIL_PASSWORD'] = "xadq ichq urrr ponl"         # Gmail app password
+app.config['MAIL_DEFAULT_SENDER'] = "smartattendx@gmail.com"
+
+mail = Mail(app)
+
+
+
 
 # Database path
 DB_PATH = os.path.join(os.path.dirname(__file__), "database", "database.db")
@@ -34,16 +55,17 @@ def init_db():
 
     # Students table
     c.execute("""
-        CREATE TABLE IF NOT EXISTS students (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id TEXT UNIQUE NOT NULL,
-            name TEXT NOT NULL,
-            email TEXT,
-            roll_no TEXT,
-            guardian_no TEXT,
-            admin_id INTEGER,
-            FOREIGN KEY(admin_id) REFERENCES admins(id)
-        )
+    CREATE TABLE IF NOT EXISTS students (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        email TEXT,
+        roll_no TEXT,
+        guardian_no TEXT,
+        guardian_email TEXT,   -- ✅ added
+        admin_id INTEGER,
+        FOREIGN KEY(admin_id) REFERENCES admins(id)
+    )
     """)
 
     # Attendance table
@@ -207,6 +229,7 @@ def register_page():
 
 
 # Dashboard
+# Dashboard
 @app.route("/dashboard")
 def dashboard():
     if not is_logged_in():
@@ -215,13 +238,10 @@ def dashboard():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
-    # Fetch the current admin from DB
+
+    # Get current admin
     c.execute("SELECT * FROM admins WHERE id = ?", (session["admin_id"],))
     admin = c.fetchone()
-    conn.close()
-
-    # Pass admin to template
-    return render_template("dashboard.html", admin=admin)
 
     # Get all students of this admin
     c.execute("SELECT * FROM students WHERE admin_id = ?", (session["admin_id"],))
@@ -230,23 +250,21 @@ def dashboard():
     # Attendance counts
     today = datetime.now().strftime("%Y-%m-%d")
 
-    c.execute("SELECT COUNT(*) FROM attendance WHERE date = ? AND admin_id = ?", (today, session["admin_id"]))
+    c.execute("SELECT COUNT(*) FROM attendance WHERE date = ? AND status = 'Present' AND admin_id = ?", (today, session["admin_id"]))
     present_count = c.fetchone()[0]
 
-    c.execute("SELECT COUNT(*) FROM students WHERE admin_id = ?", (session["admin_id"],))
-    total_students = c.fetchone()[0]
-    absent_count = total_students - present_count
+    c.execute("SELECT COUNT(*) FROM attendance WHERE date = ? AND status = 'Absent' AND admin_id = ?", (today, session["admin_id"]))
+    absent_count = c.fetchone()[0]
 
     conn.close()
 
     return render_template(
         "dashboard.html",
         students=students,
-        admin_name=session.get("admin_name", "Admin"),
+        admin=admin,
         present_count=present_count,
-        absent_count=absent_count,
+        absent_count=absent_count
     )
-
 
 # Logout
 @app.route("/logout")
@@ -280,32 +298,64 @@ def register_student():
     email = request.form.get("email")
     roll_no = request.form.get("roll_no")
     guardian_no = request.form.get("guardian_no")
+    guardian_email = request.form.get("guardian_email")  
 
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("""
-        INSERT INTO students (student_id, name, email, roll_no, guardian_no, admin_id)
-        VALUES (?, ?, ?, ?, ?, ?)
-    """, (student_id, name, email, roll_no, guardian_no, session["admin_id"]))
+        INSERT INTO students (student_id, name, email, roll_no, guardian_no, guardian_email, admin_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (student_id, name, email, roll_no, guardian_no, guardian_email, session["admin_id"]))
     conn.commit()
     conn.close()
 
     return redirect(url_for("dashboard"))
 
 
-# Notify Students
+
 @app.route("/notify", methods=["POST"])
 def notify():
-    if not is_logged_in():
+    if not session.get("admin_id"):
         return redirect(url_for("login_page"))
 
     target = request.form.get("target")
-    message = request.form.get("message")
+    message_body = request.form.get("message")
 
-    # For now, just print to console (can extend to email/SMS)
-    print(f"📢 Notification to {target}: {message}")
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
 
-    return redirect(url_for("dashboard"))
+    # select students based on target
+    if target == "all":
+        c.execute("SELECT email, guardian_email FROM students")
+    elif target == "present":
+        c.execute("SELECT email, guardian_email FROM students WHERE status='Present'")
+    elif target == "absent":
+        c.execute("SELECT email, guardian_email FROM students WHERE status='Absent'")
+    else:
+        conn.close()
+        return "Invalid target", 400
+
+    recipients = []
+    for row in c.fetchall():
+        if row[0]:
+            recipients.append(row[0])  # student email
+        if row[1]:
+            recipients.append(row[1])  # guardian email
+
+    conn.close()
+
+    if not recipients:
+        return "⚠ No recipients found."
+
+    # send email
+    try:
+        msg = Message("Attendance Notification", recipients=recipients)
+        msg.body = message_body
+        mail.send(msg)
+        return "✅ Notification sent successfully!"
+    except Exception as e:
+        return f"❌ Error: {str(e)}"
+
 
 # Student Attendance History
 @app.route("/attendance-history/<int:student_id>")
