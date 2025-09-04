@@ -34,26 +34,15 @@
   <script src="https://kit.fontawesome.com/4e5dfafbd1.js" crossorigin="anonymous"></script>
 </head>
 <body>
-  <!-- Navbar -->
-  <nav class="navbar">
-    <div class="logo">smartAttendX</div>
-    <ul class="nav-links">
-      <li><a href="#about">About</a></li>
-      <li><a href="#features">Features</a></li>
-      <li><a href="#contact">Contact</a></li>
-      <li><a href="login.html">Login</a></li>
-      <li><a href="register.html">Register</a></li>
-    </ul>
-  </nav>
-  
+
   <!-- Hero Section -->
   <section class="hero">
     <div class="hero-content">
       <h1 class="fade-in">Revolutionize Your Attendance with <span>smartAttendX</span></h1>
       <p class="fade-in delay">The smart, secure, and efficient way to manage attendance for your organization or institution.</p>
       <div class="hero-buttons fade-in delay2">
-        <a href="login.html" class="btn primary">Login</a>
-        <a href="register.html" class="btn secondary">Register</a>
+        <a href="{{ url_for('login_page') }}" class="btn primary">Login</a>
+        <a href="{{ url_for('register_page') }}" class="btn secondary">Register</a>
       </div>
     </div>
   </section>
@@ -71,57 +60,8 @@
     </ul>
   </section>
 
-    <!-- Hero Section -->
-    <section class="hero">
-      <div class="hero-content">
-        <h1 class="fade-in">
-          Revolutionize Your Attendance with <span>smartAttendX</span>
-        </h1>
-        <p class="fade-in delay">
-          The smart, secure, and efficient way to manage attendance for schools,
-          colleges, and workplaces. Powered by AI, biometrics, and cloud
-          integration.
-        </p>
-        <div class="hero-buttons fade-in delay2">
-          <a href="{{ url_for('login_page') }}" class="btn primary"
-            >Get Started</a
-          >
-          <a href="{{ url_for('register_page') }}" class="btn secondary"
-            >Create Account</a
-          >
-        </div>
-      </div>
-    </section>
 
-    <!-- About Section -->
-    <section class="about" id="about">
-      <h2>About Us</h2>
-      <p>
-        At <strong>smartAttendX</strong>, we believe that managing attendance
-        should be effortless, secure, and insightful. Our platform combines
-        advanced biometric recognition, AI-based analytics, and cloud storage to
-        give organizations complete control over attendance tracking.
-      </p>
-      <ul>
-        <li>
-          <i class="fas fa-lock"></i> Secure user authentication with encryption
-        </li>
-        <li>
-          <i class="fas fa-robot"></i> Automated biometric tracking (Face +
-          RFID)
-        </li>
-        <li>
-          <i class="fas fa-chart-line"></i> Real-time dashboards and analytics
-        </li>
-        <li><i class="fas fa-bell"></i> Instant notifications for absentees</li>
-        <li>
-          <i class="fas fa-mobile-alt"></i> Mobile-friendly responsive design
-        </li>
-        <li>
-          <i class="fas fa-sync"></i> Seamless integration with existing systems
-        </li>
-      </ul>
-    </section>
+
 
     <!-- Features -->
     <section class="features" id="features">
