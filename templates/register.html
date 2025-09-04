@@ -50,15 +50,15 @@
           </div>
           <button type="submit" class="btn primary btn-block">Register</button>
         </form>
+
         <p class="alt-link">
           Already have an account?
           <a href="{{ url_for('login_page') }}">Login here</a>
         </p>
-<head>
-  
+      </div>
+    </div>
 
     <script>
-      // Attach after DOM is loaded
       document.addEventListener("DOMContentLoaded", function () {
         const form = document.getElementById("registerForm");
 
@@ -74,17 +74,19 @@
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ name, email, password }),
+              credentials: "include",
             });
 
             const data = await res.json();
-            alert(data.success || data.error);
-
             if (data.success) {
+              alert("✅ " + data.success);
               window.location.href = "/login-page";
+            } else {
+              alert("❌ " + (data.error || "Registration failed"));
             }
           } catch (err) {
-            alert("❌ Registration failed. Check console.");
-            console.error(err);
+            alert("⚠️ Request failed. See console.");
+            console.error("Register error:", err);
           }
         });
       });
