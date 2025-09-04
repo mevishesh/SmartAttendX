@@ -2,193 +2,276 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>SecureAttendX - Admin Dashboard</title>
+    <title>Admin Dashboard - smartAttendX</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <!-- 🎨 Theme and Layout -->
+    <!-- 🎨 CSS -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
     <style>
-      :root {
-        --bg: #f4f4f4;
-        --text: #222;
-        --card: #fff;
-        --btn: #007bff;
-        --btn-text: #fff;
-      }
-
-      body.dark {
-        --bg: #121212;
-        --text: #eee;
-        --card: #1f1f1f;
-        --btn: #1e88e5;
-        --btn-text: #fff;
-      }
-
       body {
-        background-color: var(--bg);
-        color: var(--text);
+        margin: 0;
         font-family: Arial, sans-serif;
-        margin: 0;
-        padding: 0;
+        display: flex;
+        height: 100vh;
       }
-
-      .header {
-        background-color: var(--card);
+      /* Sidebar */
+      .sidebar {
+        width: 250px;
+        background: #2c3e50;
+        color: #fff;
+        display: flex;
+        flex-direction: column;
         padding: 1rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 1px solid #ccc;
       }
-
-      .header h1 {
-        margin: 0;
-      }
-
-      .theme-toggle {
-        cursor: pointer;
-        font-size: 1.3rem;
-        margin-left: 1rem;
-      }
-
-      .container {
-        padding: 2rem;
-      }
-
-      .buttons {
-        display: flex;
-        gap: 1rem;
-        flex-wrap: wrap;
+      .profile {
+        text-align: center;
         margin-bottom: 2rem;
       }
-
+      .profile img {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        margin-bottom: 0.5rem;
+      }
+      .sidebar a {
+        display: block;
+        padding: 0.8rem;
+        margin: 0.3rem 0;
+        text-decoration: none;
+        color: #fff;
+        background: #34495e;
+        border-radius: 5px;
+        transition: background 0.3s;
+      }
+      .sidebar a:hover {
+        background: #1abc9c;
+      }
+      /* Main content */
+      .content {
+        flex-grow: 1;
+        padding: 2rem;
+        overflow-y: auto;
+      }
+      .hidden {
+        display: none;
+      }
       button {
-        background-color: var(--btn);
-        color: var(--btn-text);
+        background: #007bff;
+        color: white;
         border: none;
-        padding: 0.75rem 1.5rem;
+        padding: 0.6rem 1.2rem;
         border-radius: 5px;
         cursor: pointer;
-        font-size: 1rem;
       }
-
-      canvas {
-        margin-top: 2rem;
+      button:hover {
+        background: #0056b3;
+      }
+      /* Table */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+      }
+      table,
+      th,
+      td {
+        border: 1px solid #ddd;
+      }
+      th,
+      td {
+        padding: 0.8rem;
+        text-align: left;
+      }
+      th {
+        background: #007bff;
+        color: white;
+      }
+      /* Dark Theme */
+      body.dark {
+        background: #1e1e1e;
+        color: #f4f4f4;
+      }
+      body.dark .sidebar {
+        background: #111;
+      }
+      body.dark .sidebar a {
+        background: #222;
+      }
+      body.dark th {
+        background: #444;
       }
     </style>
 
-    <!-- 📦 DataTables CSS + ChartJS -->
-    <link
-      rel="stylesheet"
-      href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css"
-    />
+    <!-- 📦 Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
   </head>
   <body>
-    <div class="header">
-      <h1>SecureAttendX Dashboard</h1>
-      <div>
-        <span>👤 {{ admin_name }}</span>
-        <span class="theme-toggle" onclick="toggleTheme()">☀️</span>
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="profile">
+        <img src="{{ url_for('static', filename='image.png') }}" alt="Admin" />
+        <h3>{{ admin_name }}</h3>
       </div>
+      <a href="#" onclick="showSection('startAttendance')"
+        >📋 Start Attendance</a
+      >
+      <a href="#" onclick="showSection('viewAttendance')">👁 View Attendance</a>
+      <a href="#" onclick="showSection('registerStudent')"
+        >➕ Register Student</a
+      >
+      <a href="#" onclick="showSection('notify')">📢 Notify</a>
+      <a href="#" onclick="toggleTheme()">🌙 Toggle Theme</a>
+      <a href="#" onclick="showSection('settings')">⚙ Settings</a>
+      <a href="{{ url_for('logout') }}">🚪 Logout</a>
     </div>
 
-    <div class="container">
-      <!-- 🧭 Action Buttons -->
-      <div class="buttons">
+    <!-- Main Content -->
+    <div class="content">
+      <!-- Start Attendance -->
+      <section id="startAttendance" class="">
+        <h2>Start Attendance</h2>
         <form action="/start-attendance" method="POST">
-          <button type="submit">📋 Start Attendance</button>
+          <button type="submit">▶ Run Face Recognizer</button>
         </form>
-        <form action="/add-student" method="GET">
-          <button type="submit">👥 Manage Students</button>
+        <p>Attendance recognizer will open and mark students automatically.</p>
+      </section>
+
+      <!-- View Attendance -->
+      <section id="viewAttendance" class="hidden">
+        <h2>View Attendance</h2>
+        <canvas id="attendanceChart" width="400" height="200"></canvas>
+        <h3>Student List</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Roll No</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for student in students %}
+            <tr>
+              <td>{{ student.id }}</td>
+              <td>{{ student.name }}</td>
+              <td>{{ student.roll_no }}</td>
+              <td>
+                <a
+                  href="{{ url_for('attendance_history', student_id=student.id) }}"
+                >
+                  📅 View History
+                </a>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="3">No students found.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Register Student -->
+      <section id="registerStudent" class="hidden">
+        <h2>Register New Student</h2>
+        <form action="/register-student" method="POST">
+          <input
+            type="text"
+            name="student_id"
+            placeholder="Student ID"
+            required
+          /><br /><br />
+          <input
+            type="text"
+            name="name"
+            placeholder="Full Name"
+            required
+          /><br /><br />
+          <input
+            type="email"
+            name="email"
+            placeholder="Email"
+            required
+          /><br /><br />
+          <input
+            type="text"
+            name="roll_no"
+            placeholder="Roll No"
+            required
+          /><br /><br />
+          <input
+            type="text"
+            name="guardian_no"
+            placeholder="Guardian Contact No"
+            required
+          /><br /><br />
+          <button type="submit">Register Student</button>
         </form>
+      </section>
+
+      <!-- Notify -->
+      <section id="notify" class="hidden">
+        <h2>Send Notifications</h2>
         <form action="/notify" method="POST">
-          <button type="submit">📧 Notify Absent</button>
+          <label>Send To:</label>
+          <select name="target" required>
+            <option value="all">All Students</option>
+            <option value="present">Present Students</option>
+            <option value="absent">Absent Students</option></select
+          ><br /><br />
+          <textarea
+            name="message"
+            placeholder="Write your message..."
+            required
+          ></textarea
+          ><br /><br />
+          <button type="submit">📢 Send Notification</button>
         </form>
-      </div>
+      </section>
 
-      <!-- 📊 Attendance Chart -->
-      <h2>Today's Attendance</h2>
-      <canvas id="attendanceChart" width="400" height="180"></canvas>
-
-      <!-- 👥 Student Table -->
-      <h2 style="margin-top: 3rem">Registered Students</h2>
-      <table id="studentsTable" class="display" style="width: 100%">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for student in students %}
-          <tr>
-            <td>{{ student.id }}</td>
-            <td>{{ student.name }}</td>
-            <td>{{ student.email }}</td>
-            <td>
-              <form
-                action="/edit-student/{{ student.id }}"
-                method="GET"
-                style="display: inline"
-              >
-                <button>Edit</button>
-              </form>
-              <form
-                action="/delete-student/{{ student.id }}"
-                method="POST"
-                style="display: inline"
-              >
-                <button onclick="return confirm('Delete this student?')">
-                  Delete
-                </button>
-              </form>
-            </td>
-          </tr>
-          {% else %}
-          <tr>
-            <td colspan="4">No students found.</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      <!-- Settings -->
+      <section id="settings" class="hidden">
+        <h2>Settings</h2>
+        <p>Feature coming soon (change password, update profile, etc.).</p>
+      </section>
     </div>
 
-    <!-- 🌗 Theme + Table + Chart Script -->
+    <!-- JS -->
     <script>
-      function toggleTheme() {
-          document.body.classList.toggle("dark");
-          const icon = document.querySelector(".theme-toggle");
-          icon.textContent = document.body.classList.contains("dark") ? "🌙" : "☀️";
+      function showSection(sectionId) {
+        document.querySelectorAll('.content section').forEach(sec => {
+          sec.classList.add('hidden');
+        });
+        document.getElementById(sectionId).classList.remove('hidden');
       }
 
-      $(document).ready(function () {
-          $('#studentsTable').DataTable();
-      });
+      function toggleTheme() {
+        document.body.classList.toggle('dark');
+      }
 
-      const ctx = document.getElementById('attendanceChart').getContext('2d');
-      const attendanceChart = new Chart(ctx, {
+      // Attendance Chart
+      const ctx = document.getElementById('attendanceChart');
+      if (ctx) {
+        new Chart(ctx, {
           type: 'doughnut',
           data: {
-              labels: ['Present', 'Absent'],
-              datasets: [{
-                  label: "Today's Attendance",
-                  data: [{{ present_count|default(0) }}, {{ absent_count|default(0) }}],
-                  backgroundColor: ['#28a745', '#dc3545']
-              }]
+            labels: ['Present', 'Absent'],
+            datasets: [{
+              data: [{{ present_count|default(0) }}, {{ absent_count|default(0) }}],
+              backgroundColor: ['#28a745', '#dc3545']
+            }]
           },
           options: {
-              responsive: true,
-              plugins: {
-                  legend: {
-                      position: 'bottom'
-                  }
-              }
+            responsive: true,
+            plugins: { legend: { position: 'bottom' } }
           }
-      });
+        });
+      }
     </script>
   </body>
 </html>
