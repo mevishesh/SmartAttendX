@@ -1,11 +1,9 @@
 import sqlite3
 import os
 
-# Ensure database directory exists
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # ✅ fixed here
 DB_PATH = os.path.join(BASE_DIR, "database.db")
 
-# Create database file in current 'database' folder
 conn = sqlite3.connect(DB_PATH)
 c = conn.cursor()
 
@@ -23,8 +21,10 @@ CREATE TABLE IF NOT EXISTS admins (
 c.execute("""
 CREATE TABLE IF NOT EXISTS students (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id TEXT UNIQUE NOT NULL,
     name TEXT NOT NULL,
-    email TEXT NOT NULL,
+    email TEXT,
+    guardian_no TEXT,
     admin_id INTEGER NOT NULL,
     FOREIGN KEY(admin_id) REFERENCES admins(id)
 )
@@ -37,11 +37,19 @@ CREATE TABLE IF NOT EXISTS attendance (
     student_id INTEGER NOT NULL,
     date TEXT NOT NULL,
     status TEXT NOT NULL,
-    FOREIGN KEY(student_id) REFERENCES students(id)
+    admin_id INTEGER,
+    FOREIGN KEY(student_id) REFERENCES students(id),
+    FOREIGN KEY(admin_id) REFERENCES admins(id)
 )
+""")
+
+# ➕ Add a unique index so only one attendance per student per date
+c.execute("""
+CREATE UNIQUE INDEX IF NOT EXISTS idx_student_date
+ON attendance(student_id, date)
 """)
 
 conn.commit()
 conn.close()
 
-print(f"✅ Database created successfully at: {DB_PATH}")
+print(f"✅ Database created/updated successfully at: {DB_PATH}")
