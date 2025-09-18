@@ -268,11 +268,12 @@ def register_student():
     if not is_logged_in():
         return redirect(url_for("login_page"))
 
-    student_id = (request.form.get("student_id") or "").strip()
-    name = (request.form.get("name") or "").strip()
-    email = (request.form.get("email") or "").strip()
-    roll_no = (request.form.get("roll_no") or "").strip()
-    guardian_no = (request.form.get("guardian_no") or "").strip()
+    # -------- Get form data --------
+    student_id     = (request.form.get("student_id") or "").strip()
+    name           = (request.form.get("name") or "").strip()
+    email          = (request.form.get("email") or "").strip()
+    roll_no        = (request.form.get("roll_no") or "").strip()
+    guardian_no    = (request.form.get("guardian_no") or "").strip()
     guardian_email = (request.form.get("guardian_email") or "").strip()
 
     if not student_id or not name:
@@ -282,35 +283,47 @@ def register_student():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
 
-    # Check duplicate by student_id
+    # -------- Check for duplicate student_id --------
     c.execute("SELECT id FROM students WHERE student_id = ?", (student_id,))
-    if c.fetchone():
+    existing = c.fetchone()
+    if existing:
         conn.close()
-        flash(f"⚠ Student ID {student_id} already exists. Please use a different ID.", "warning")
+        flash(f"⚠ Student ID {student_id} already exists.", "warning")
         return redirect(url_for("dashboard"))
 
+    # -------- Insert student into DB --------
     c.execute("""
         INSERT INTO students (student_id, name, email, roll_no, guardian_no, guardian_email, admin_id)
         VALUES (?, ?, ?, ?, ?, ?, ?)
     """, (student_id, name, email, roll_no, guardian_no, guardian_email, session["admin_id"]))
     conn.commit()
-    new_student_db_id = c.lastrowid
     conn.close()
 
-    # Launch face registration script
+    # -------- Launch register_user.py with student_id --------
     try:
         script_path = os.path.join(BASE_DIR, "face_recognition", "register_user.py")
         popen_kwargs = {}
         if platform.system() == "Windows":
             popen_kwargs["creationflags"] = subprocess.CREATE_NEW_CONSOLE
-        # Pass DB id and display name (adjust to your script's expected args)
-        subprocess.Popen([sys.executable, script_path, str(new_student_db_id), name], **popen_kwargs)
+
+        subprocess.Popen([
+            sys.executable,
+            script_path,
+            student_id,  # <-- Use form student_id, NOT DB auto-increment
+            name,
+            roll_no,
+            email,
+            guardian_no,
+            guardian_email
+        ], **popen_kwargs)
+
         flash(f"✅ Student {name} added. Starting face capture…", "success")
     except Exception as e:
         print("[ERROR] Could not start register_user.py:", e)
         flash("Student added but could not start face capture script. Check server logs.", "danger")
 
     return redirect(url_for("dashboard"))
+
 
 # ---- Notify ----
 def _fetch_emails_by_status_for_today(target: str, admin_id: int):
@@ -392,18 +405,18 @@ def attendance_history(student_id):
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
 
-    c.execute("SELECT * FROM students WHERE id = ? AND admin_id = ?", (student_id, session["admin_id"]))
+    # student info
+    c.execute("SELECT * FROM students WHERE id = ?", (student_id,))
     student = c.fetchone()
     if not student:
         conn.close()
-        return "Student not found or unauthorized", 404
+        return "Student not found", 404
 
-    c.execute("""
-        SELECT date, status
-        FROM attendance
-        WHERE student_id = ? AND admin_id = ?
-        ORDER BY date DESC
-    """, (student_id, session["admin_id"]))
+    # attendance WITHOUT admin filter (for testing)
+    c.execute(
+        "SELECT date, status FROM attendance WHERE student_id = ? ORDER BY date DESC",
+        (student_id,)
+    )
     records = c.fetchall()
     conn.close()
 
