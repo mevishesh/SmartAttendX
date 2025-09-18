@@ -22,13 +22,27 @@ c.execute("""
 CREATE TABLE IF NOT EXISTS students (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     student_id TEXT UNIQUE NOT NULL,
+    roll_no TEXT,
     name TEXT NOT NULL,
     email TEXT,
     guardian_no TEXT,
+    guardian_email TEXT,
     admin_id INTEGER NOT NULL,
     FOREIGN KEY(admin_id) REFERENCES admins(id)
 )
 """)
+
+# ✅ ensure new columns exist even if table already created
+# (SQLite ignores duplicate column adds)
+try:
+    c.execute("ALTER TABLE students ADD COLUMN roll_no TEXT;")
+except sqlite3.OperationalError:
+    pass  # column already exists
+
+try:
+    c.execute("ALTER TABLE students ADD COLUMN guardian_email TEXT;")
+except sqlite3.OperationalError:
+    pass  # column already exists
 
 # Attendance table
 c.execute("""

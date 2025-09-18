@@ -1,35 +1,38 @@
+#!/usr/bin/env python3
 import os
 import shutil
 import sqlite3
 
-# === Adjust these paths to your project ===
-base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-faces_dir = os.path.join(base_dir, "face_recognition", "trained_faces")
-model_file = os.path.join(base_dir, "face_recognition", "face_model.yml")
-db_path = os.path.join(base_dir, "database", "database.db")
+print("⚠ WARNING: This will DELETE ALL student data and images. Type 'YES' to continue:", end=" ")
+confirm = input().strip()
 
-# 1. Remove trained_faces folder contents
-if os.path.exists(faces_dir):
-    shutil.rmtree(faces_dir)
-    print("✅ Deleted trained_faces folder")
-os.makedirs(faces_dir, exist_ok=True)
+if confirm != "YES":
+    print("❌ Aborted.")
+    exit(0)
 
-# 2. Remove model file
-if os.path.exists(model_file):
-    os.remove(model_file)
-    print("✅ Deleted face_model.yml")
+# Base paths
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # face_recognition folder
+DB_PATH = os.path.join(BASE_DIR, "..", "database", "database.db")
+TRAINED_DIR = os.path.join(BASE_DIR, "trained_faces")
 
-# 3. Clear records from database tables (students + attendance)
-if os.path.exists(db_path):
-    conn = sqlite3.connect(db_path)
-    c = conn.cursor()
-
-    c.execute("DELETE FROM attendance;")
-    c.execute("DELETE FROM students;")
-    conn.commit()
-    conn.close()
-    print(f"✅ Cleared students and attendance tables from {db_path}")
+# Remove database
+if os.path.exists(DB_PATH):
+    try:
+        os.remove(DB_PATH)
+        print(f"✅ Database removed: {DB_PATH}")
+    except Exception as e:
+        print(f"[ERROR] Could not remove database: {e}")
 else:
-    print(f"⚠ Database file not found at {db_path}")
+    print("[WARN] Database not found. Skipping database clearing.")
 
-print("🎯 All training images, model file, and DB records cleared successfully")
+# Remove trained faces
+if os.path.exists(TRAINED_DIR):
+    try:
+        shutil.rmtree(TRAINED_DIR)
+        print(f"✅ Trained faces folder removed: {TRAINED_DIR}")
+    except Exception as e:
+        print(f"[ERROR] Could not remove trained faces: {e}")
+else:
+    print("[WARN] Trained faces folder not found. Skipping images clearing.")
+
+print("✅ Reset complete.")
