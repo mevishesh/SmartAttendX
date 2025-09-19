@@ -1,0 +1,11 @@
+Flask==2.3.2
+Flask-Mail==0.9.1
+numpy==1.26.0
+opencv-contrib-python==4.8.1.78
+Pillow==10.0.1
+sounddevice==0.5.2
+soundfile==0.12.1
+pyttsx3==2.90
+librosa==0.10.1
+scipy==1.11.2
+numba==0.59.1
