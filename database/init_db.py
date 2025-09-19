@@ -8,12 +8,21 @@ conn = sqlite3.connect(DB_PATH)
 c = conn.cursor()
 
 # Admins table
+# c.execute("""
+# CREATE TABLE IF NOT EXISTS admins (
+#     id INTEGER PRIMARY KEY AUTOINCREMENT,
+#     name TEXT NOT NULL,
+#     email TEXT NOT NULL UNIQUE,
+#     password TEXT NOT NULL
+# )
+# """)
 c.execute("""
 CREATE TABLE IF NOT EXISTS admins (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
-    email TEXT NOT NULL UNIQUE,
-    password TEXT NOT NULL
+    email TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    profile_pic TEXT
 )
 """)
 
