@@ -48,23 +48,51 @@ student_map = get_student_map()
 # ---------- Attendance ----------
 today_date = datetime.now().strftime("%Y-%m-%d")
 
-def mark_attendance(student_id):
+# def mark_attendance(student_id):
+#     conn = sqlite3.connect(DB_PATH)
+#     c = conn.cursor()
+#     c.execute("SELECT admin_id FROM students WHERE student_id=?", (str(student_id),))
+#     row = c.fetchone()
+#     admin_id = row[0] if row else None
+#     c.execute("SELECT 1 FROM attendance WHERE student_id=? AND date=? AND admin_id=?",
+#               (student_id, today_date, admin_id))
+#     if not c.fetchone():
+#         c.execute("""INSERT OR IGNORE INTO attendance
+#                   (student_id,date,status,admin_id) VALUES (?,?,?,?)""",
+#                   (student_id,today_date,"Present",admin_id))
+#         conn.commit()
+#         conn.close()
+#         return True
+#     conn.close()
+#     return False
+
+def mark_attendance(student_id_string):
+    """student_id_string is the roll number you trained LBPH with"""
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute("SELECT admin_id FROM students WHERE student_id=?", (str(student_id),))
+
+    # Get internal id + admin_id
+    c.execute("SELECT id, admin_id FROM students WHERE student_id=?", (str(student_id_string),))
     row = c.fetchone()
-    admin_id = row[0] if row else None
+    if not row:
+        conn.close()
+        return False
+    db_pk, admin_id = row
+
+    # Check if already marked
     c.execute("SELECT 1 FROM attendance WHERE student_id=? AND date=? AND admin_id=?",
-              (student_id, today_date, admin_id))
+              (db_pk, today_date, admin_id))
     if not c.fetchone():
         c.execute("""INSERT OR IGNORE INTO attendance
                   (student_id,date,status,admin_id) VALUES (?,?,?,?)""",
-                  (student_id,today_date,"Present",admin_id))
+                  (db_pk, today_date, "Present", admin_id))
         conn.commit()
         conn.close()
         return True
+
     conn.close()
     return False
+
 
 # ---------- Voice ----------
 def record_voice_temp(duration=3,samplerate=16000):
@@ -174,4 +202,4 @@ while True:
 
 cap.release()
 cv2.destroyAllWindows()
-print("👋 Stopped.")
+print("👋 Stopped.")    
