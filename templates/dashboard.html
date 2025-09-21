@@ -11,8 +11,14 @@
       body {
         margin: 0;
         font-family: Arial, sans-serif;
+        min-height: 100vh;
+        background: linear-gradient(120deg, #f8fafc 0%, #e3e9f7 100%);
+        /* Remove display:flex and height:100vh to allow normal page flow */
+      }
+      .dashboard-container {
         display: flex;
-        height: 100vh;
+        min-height: 100vh;
+        align-items: stretch;
       }
       /* Sidebar */
       .sidebar {
@@ -22,6 +28,10 @@
         display: flex;
         flex-direction: column;
         padding: 1rem;
+        min-height: 100vh;
+        box-shadow: 2px 0 16px rgba(44,62,80,0.07);
+        position: sticky;
+        top: 0;
       }
       .profile {
         text-align: center;
@@ -62,8 +72,13 @@
       /* Main content */
       .content {
         flex-grow: 1;
-        padding: 2rem;
-        overflow-y: auto;
+        padding: 2.5rem 3vw;
+        /* Remove overflow-y:auto */
+        background: transparent;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
       }
       .hidden {
         display: none;
@@ -99,6 +114,521 @@
         background: #007bff;
         color: white;
       }
+      /* Register Student Card */
+      #registerStudent .register-card {
+        max-width: 420px;
+        margin: 2rem auto;
+        background: #f9f9f9;
+        border-radius: 16px;
+        box-shadow: 0 4px 24px rgba(44,62,80,0.10);
+        padding: 2.5rem 2rem 2rem 2rem;
+        transition: box-shadow 0.2s;
+      }
+      #registerStudent .register-card:hover {
+        box-shadow: 0 8px 32px rgba(44,62,80,0.18);
+      }
+      #registerStudent h2 {
+        text-align: center;
+        color: #007bff;
+        margin-bottom: 1.5rem;
+        letter-spacing: 1px;
+        font-weight: 700;
+      }
+      #registerStudent form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.1rem;
+      }
+      #registerStudent label {
+        font-weight: 600;
+        color: #34495e;
+        margin-bottom: 0.2rem;
+        display: block;
+        letter-spacing: 0.5px;
+      }
+      #registerStudent input[type="text"],
+      #registerStudent input[type="number"],
+      #registerStudent input[type="email"] {
+        width: 100%;
+        padding: 0.75rem;
+        border-radius: 7px;
+        border: 1.5px solid #d1d5db;
+        margin-top: 0.2rem;
+        font-size: 1rem;
+        background: #fff;
+        transition: border 0.2s;
+      }
+      #registerStudent input:focus {
+        border: 1.5px solid #007bff;
+        outline: none;
+        background: #f0f8ff;
+      }
+      #registerStudent button[type="submit"] {
+        margin-top: 1rem;
+        background: linear-gradient(90deg, #007bff 60%, #0056b3 100%);
+        color: white;
+        font-weight: 700;
+        font-size: 1.08rem;
+        padding: 0.9rem;
+        border-radius: 7px;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0,123,255,0.08);
+        transition: background 0.2s, box-shadow 0.2s;
+        letter-spacing: 0.5px;
+      }
+      #registerStudent button[type="submit"]:hover {
+        background: linear-gradient(90deg, #0056b3 60%, #007bff 100%);
+        box-shadow: 0 4px 16px rgba(0,123,255,0.13);
+      }
+
+      /* Notify Card */
+      #notify .notify-card {
+        max-width: 480px;
+        margin: 2rem auto;
+        background: #f9f9f9;
+        border-radius: 16px;
+        box-shadow: 0 4px 24px rgba(44,62,80,0.10);
+        padding: 2.2rem 2rem 2rem 2rem;
+        transition: box-shadow 0.2s;
+        position: relative;
+      }
+      #notify .notify-card:hover {
+        box-shadow: 0 8px 32px rgba(44,62,80,0.18);
+      }
+      #notify h2 {
+        text-align: center;
+        color: #007bff;
+        margin-bottom: 1.2rem;
+        letter-spacing: 1px;
+        font-weight: 700;
+      }
+      #notify .stats-row {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin-bottom: 1.2rem;
+      }
+      #notify .stat-pill {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        backgr<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Admin Dashboard - smartAttendX</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <div class="dashboard-container">
+      <aside class="sidebar">
+        <div class="profile">
+          <a href="{{ url_for('profile') }}">
+            <img
+              src="{{ url_for('static', filename=admin.profile_pic if admin.profile_pic else 'images/default.png') }}"
+              alt="Profile Picture"
+              class="profile-pic"
+            />
+            <span>{{ admin['name'] }}</span>
+          </a>
+        </div>
+        <nav class="sidebar-menu">
+          <a href="#" onclick="showSection('startAttendance')" class="menu-link"
+            >📋 Start Attendance</a
+          >
+          <a href="#" onclick="showSection('viewAttendance')" class="menu-link"
+            >👁 View Attendance</a
+          >
+          <a
+            href="#"
+            onclick="showSection('registerStudent')"
+            class="menu-link"
+            >➕ Register Student</a
+          >
+          <a href="#" onclick="showSection('notify')" class="menu-link"
+            >📢 Notify</a
+          >
+          <a href="#" onclick="showSection('settings')" class="menu-link"
+            >⚙ Settings</a
+          >
+          <a href="#" onclick="toggleTheme()" class="menu-link">🌙 Toggle Theme</a>
+          <a href="{{ url_for('logout') }}" class="menu-link">🚪 Logout</a>
+        </nav>
+      </aside>
+      <main class="content">
+        <section id="startAttendance">
+          <div class="card">
+            <h2>Start Attendance</h2>
+            <form action="/start-attendance" method="POST">
+              <p>
+                Run the face recognizer to automatically mark student
+                attendance.
+              </p>
+              <button type="submit">▶ Run Face Recognizer</button>
+            </form>
+          </div>
+        </section>
+
+        <section id="viewAttendance" class="hidden">
+          <div class="card">
+            <h2>View Attendance</h2>
+            <div class="chart-container">
+              <h3>Today's Overview</h3>
+              <canvas id="attendanceBarChart"></canvas>
+            </div>
+            <h3>Student List</h3>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Roll No</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for student in students %}
+                  <tr>
+                    <td>{{ student.id }}</td>
+                    <td>{{ student.name }}</td>
+                    <td>{{ student.roll_no }}</td>
+                    <td>
+                      <a href="{{ url_for('attendance_history', student_id=student.id) }}" class="history-link">📅 View History</a>
+                    </td>
+                  </tr>
+                  {% else %}
+                  <tr>
+                    <td colspan="4">No students found.</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="registerStudent" class="hidden">
+          <div class="card form-card">
+            <h2>Register New Student</h2>
+            <form action="/register-student" method="POST">
+              <div class="form-group">
+                <label for="student_id">Student ID</label>
+                <input
+                  type="number"
+                  id="student_id"
+                  name="student_id"
+                  placeholder="e.g. 1001"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="name">Full Name</label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  placeholder="e.g. Jane Doe"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="email">Student Email</label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  placeholder="e.g. jane@email.com"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="roll_no">Roll No</label>
+                <input
+                  type="number"
+                  id="roll_no"
+                  name="roll_no"
+                  placeholder="e.g. 12"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="guardian_no">Guardian Contact No</label>
+                <input
+                  type="number"
+                  id="guardian_no"
+                  name="guardian_no"
+                  placeholder="e.g. 9876543210"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="guardian_email">Guardian Email</label>
+                <input
+                  type="email"
+                  id="guardian_email"
+                  name="guardian_email"
+                  placeholder="e.g. parent@email.com"
+                  required
+                />
+              </div>
+              <button type="submit" class="cta-button">
+                ➕ Register Student
+              </button>
+            </form>
+          </div>
+        </section>
+
+        <section id="notify" class="hidden">
+          <div class="card form-card">
+            <h2>Send Notifications</h2>
+            <div class="stats-row">
+              <div class="stat-pill present">
+                ✅ Present: <strong>{{ present_count }}</strong>
+              </div>
+              <div class="stat-pill absent">
+                ❌ Absent: <strong>{{ absent_count }}</strong>
+              </div>
+              <div class="stat-pill total">
+                👥 Total: <strong>{{ present_count + absent_count }}</strong>
+              </div>
+            </div>
+            <form action="/notify" method="POST">
+              <div class="form-group">
+                <label for="target">Send To:</label>
+                <select name="target" id="target" required>
+                  <option value="all">
+                    All Students ({{ present_count + absent_count }})
+                  </option>
+                  <option value="present">
+                    Present Students ({{ present_count }})
+                  </option>
+                  <option value="absent">
+                    Absent Students ({{ absent_count }})
+                  </option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="message">Message:</label>
+                <textarea
+                  name="message"
+                  id="message"
+                  placeholder="Write your message..."
+                  required
+                ></textarea>
+              </div>
+              <button type="submit" class="cta-button">
+                📢 Send Notification
+              </button>
+            </form>
+          </div>
+        </section>
+
+        <section id="settings" class="hidden">
+          <div class="card">
+            <h2>Settings</h2>
+            <p>Feature coming soon (change password, update profile, etc.).</p>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      function showSection(sectionId) {
+        document.querySelectorAll("main section").forEach((sec) => {
+          sec.classList.add("hidden");
+        });
+        document.getElementById(sectionId).classList.remove("hidden");
+      }
+      function toggleTheme() {
+        document.body.classList.toggle("dark");
+      }
+      const barCtx = document.getElementById("attendanceBarChart");
+      if (barCtx) {
+        new Chart(barCtx, {
+          type: "bar",
+          data: {
+            labels: ["Present", "Absent"],
+            datasets: [
+              {
+                label: "Number of Students",
+                data: [
+                  {{ present_count|default(0) }},
+                  {{ absent_count|default(0) }},
+                ],
+                backgroundColor: ["#28a745", "#dc3545"],
+                borderRadius: 8,
+                maxBarThickness: 60,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { display: false },
+              title: {
+                display: false,
+              },
+            },
+            scales: {
+              x: {
+                grid: { display: false },
+                ticks: { font: { size: 16, weight: "bold" } },
+              },
+              y: {
+                beginAtZero: true,
+                grid: { color: "rgba(0, 0, 0, 0.05)" },
+                ticks: { stepSize: 1, font: { size: 14 } },
+              },
+            },
+          },
+        });
+      }
+    </script>
+  </body>
+</html>ound: #e3e9f7;
+        color: #222;
+        border-radius: 20px;
+        padding: 0.5rem 1.2rem;
+        font-weight: 600;
+        font-size: 1rem;
+        box-shadow: 0 1px 4px rgba(44,62,80,0.07);
+      }
+      #notify .stat-pill.present {
+        background: #d4f8e8;
+        color: #28a745;
+      }
+      #notify .stat-pill.absent {
+        background: #ffe3e3;
+        color: #dc3545;
+      }
+      #notify form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.1rem;
+        margin-top: 0.5rem;
+      }
+      #notify label {
+        font-weight: 600;
+        color: #34495e;
+        margin-bottom: 0.2rem;
+        display: block;
+        letter-spacing: 0.5px;
+      }
+      #notify select, #notify textarea {
+        width: 100%;
+        padding: 0.7rem;
+        border-radius: 7px;
+        border: 1.5px solid #d1d5db;
+        font-size: 1rem;
+        background: #fff;
+        transition: border 0.2s;
+        margin-top: 0.2rem;
+      }
+      #notify select:focus, #notify textarea:focus {
+        border: 1.5px solid #007bff;
+        outline: none;
+        background: #f0f8ff;
+      }
+      #notify textarea {
+        min-height: 90px;
+        resize: vertical;
+      }
+      #notify button[type="submit"] {
+        margin-top: 0.5rem;
+        background: linear-gradient(90deg, #007bff 60%, #0056b3 100%);
+        color: white;
+        font-weight: 700;
+        font-size: 1.08rem;
+        padding: 0.9rem;
+        border-radius: 7px;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0,123,255,0.08);
+        transition: background 0.2s, box-shadow 0.2s;
+        letter-spacing: 0.5px;
+      }
+      #notify button[type="submit"]:hover {
+        background: linear-gradient(90deg, #0056b3 60%, #007bff 100%);
+        box-shadow: 0 4px 16px rgba(0,123,255,0.13);
+      }
+      /* Responsive */
+      @media (max-width: 600px) {
+        #registerStudent .register-card {
+          padding: 1.2rem 0.5rem 1.5rem 0.5rem;
+        }
+        #notify .notify-card {
+          padding: 1.2rem 0.5rem 1.5rem 0.5rem;
+        }
+        #notify .stats-row {
+          flex-direction: column;
+          gap: 0.7rem;
+          align-items: center;
+        }
+      }
+
+      /* Dark Theme for Register Student */
+      body.dark #registerStudent .register-card {
+        background: #23272f;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+      }
+      body.dark #registerStudent label {
+        color: #e0e6ed;
+      }
+      body.dark #registerStudent input {
+        background: #181b20;
+        color: #f4f4f4;
+        border: 1.5px solid #444;
+      }
+      body.dark #registerStudent input:focus {
+        background: #23272f;
+        border: 1.5px solid #007bff;
+      }
+      /* Dark Theme for Notify */
+      body.dark #notify .notify-card {
+        background: #23272f;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+      }
+      body.dark #notify label {
+        color: #e0e6ed;
+      }
+      body.dark #notify select,
+      body.dark #notify textarea {
+        background: #181b20;
+        color: #f4f4f4;
+        border: 1.5px solid #444;
+      }
+      body.dark #notify select:focus,
+      body.dark #notify textarea:focus {
+        background: #23272f;
+        border: 1.5px solid #007bff;
+      }
+      body.dark #notify .stat-pill {
+        background: #23272f;
+        color: #f4f4f4;
+      }
+      body.dark #notify .stat-pill.present {
+        background: #1e3a2f;
+        color: #28a745;
+      }
+      body.dark #notify .stat-pill.absent {
+        background: #3a2323;
+        color: #dc3545;
+      }
       /* Dark Theme */
       body.dark {
         background: #1e1e1e;
@@ -119,25 +649,24 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
   <body>
-
-<!-- Sidebar -->
-<div class="sidebar">
-  <div class="profile">
-    <a href="{{ url_for('profile') }}">
-      <img src="{{ url_for('static', filename=admin.profile_pic if admin.profile_pic else 'images/default.png') }}"
-           alt="Profile Picture" class="profile-pic">
-      <span>{{ admin['name'] }}</span>
-    </a>
-  </div>
-  <a href="#" onclick="showSection('startAttendance')" class="menu-link">📋 Start Attendance</a>
-  <a href="#" onclick="showSection('viewAttendance')" class="menu-link">👁 View Attendance</a>
-  <a href="#" onclick="showSection('registerStudent')" class="menu-link">➕ Register Student</a>
-  <a href="#" onclick="showSection('notify')" class="menu-link">📢 Notify</a>
-  <a href="#" onclick="toggleTheme()" class="menu-link">🌙 Toggle Theme</a>
-  <a href="#" onclick="showSection('settings')" class="menu-link">⚙ Settings</a>
-  <a href="{{ url_for('logout') }}" class="menu-link">🚪 Logout</a>
-</div>
-
+  <div class="dashboard-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="profile">
+        <a href="{{ url_for('profile') }}">
+          <img src="{{ url_for('static', filename=admin.profile_pic if admin.profile_pic else 'images/default.png') }}"
+               alt="Profile Picture" class="profile-pic">
+          <span>{{ admin['name'] }}</span>
+        </a>
+      </div>
+      <a href="#" onclick="showSection('startAttendance')" class="menu-link">📋 Start Attendance</a>
+      <a href="#" onclick="showSection('viewAttendance')" class="menu-link">👁 View Attendance</a>
+      <a href="#" onclick="showSection('registerStudent')" class="menu-link">➕ Register Student</a>
+      <a href="#" onclick="showSection('notify')" class="menu-link">📢 Notify</a>
+      <a href="#" onclick="toggleTheme()" class="menu-link">🌙 Toggle Theme</a>
+      <a href="#" onclick="showSection('settings')" class="menu-link">⚙ Settings</a>
+      <a href="{{ url_for('logout') }}" class="menu-link">🚪 Logout</a>
+    </div>
     <!-- Main Content -->
     <div class="content">
       <!-- Start Attendance -->
@@ -152,7 +681,10 @@
       <!-- View Attendance -->
       <section id="viewAttendance" class="hidden">
         <h2>View Attendance</h2>
-        <canvas id="attendanceChart" width="400" height="200"></canvas>
+        <div style="max-width: 500px; margin: 0 auto 2rem auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.07); padding: 2rem;">
+          <h3 style="text-align:center; color:#007bff; margin-bottom:1rem;">Attendance Overview</h3>
+          <canvas id="attendanceBarChart" height="180"></canvas>
+        </div>
         <h3>Student List</h3>
         <table>
           <thead>
@@ -184,35 +716,67 @@
 
       <!-- Register Student -->
       <section id="registerStudent" class="hidden">
-        <h2>Register New Student</h2>
-        <form action="/register-student" method="POST">
-          <input type="text" name="student_id" placeholder="Student ID" required /><br /><br />
-          <input type="text" name="name" placeholder="Full Name" required /><br /><br />
-          <input type="email" name="email" placeholder="Student Email" required /><br /><br />
-          <input type="text" name="roll_no" placeholder="Roll No" required /><br /><br />
-          <input type="text" name="guardian_no" placeholder="Guardian Contact No" required /><br /><br />
-          <input type="email" name="guardian_email" placeholder="Guardian Email" required /><br /><br />
-          <button type="submit">Register Student</button>
-        </form>
+        <div class="register-card">
+          <h2>Register New Student</h2>
+          <form action="/register-student" method="POST">
+            <div>
+              <label for="student_id">Student ID</label>
+              <input type="number" id="student_id" name="student_id" placeholder="e.g. 1001" required>
+            </div>
+            <div>
+              <label for="name">Full Name</label>
+              <input type="text" id="name" name="name" placeholder="e.g. Jane Doe" required>
+            </div>
+            <div>
+              <label for="email">Student Email</label>
+              <input type="email" id="email" name="email" placeholder="e.g. jane@email.com" required>
+            </div>
+            <div>
+              <label for="roll_no">Roll No</label>
+              <input type="number" id="roll_no" name="roll_no" placeholder="e.g. 12" required>
+            </div>
+            <div>
+              <label for="guardian_no">Guardian Contact No</label>
+              <input type="number" id="guardian_no" name="guardian_no" placeholder="e.g. 9876543210" required>
+            </div>
+            <div>
+              <label for="guardian_email">Guardian Email</label>
+              <input type="email" id="guardian_email" name="guardian_email" placeholder="e.g. parent@email.com" required>
+            </div>
+            <button type="submit">
+              Register Student
+            </button>
+          </form>
+        </div>
       </section>
 
       <!-- Notify -->
       <section id="notify" class="hidden">
-        <h2>Send Notifications</h2>
-        <p>
-          ✅ Present: <strong>{{ present_count }}</strong> |
-          ❌ Absent: <strong>{{ absent_count }}</strong>
-        </p>
-        <form action="/notify" method="POST">
-          <label>Send To:</label>
-          <select name="target" required>
-            <option value="all">All Students ({{ present_count + absent_count }})</option>
-            <option value="present">Present Students ({{ present_count }})</option>
-            <option value="absent">Absent Students ({{ absent_count }})</option>
-          </select><br /><br />
-          <textarea name="message" placeholder="Write your message..." required></textarea><br /><br />
-          <button type="submit">📢 Send Notification</button>
-        </form>
+        <div class="notify-card">
+          <h2>Send Notifications</h2>
+          <div class="stats-row">
+            <div class="stat-pill present"> Present: <strong>{{ present_count }}</strong></div>
+            <div class="stat-pill absent"> Absent: <strong>{{ absent_count }}</strong></div>
+            <div class="stat-pill" style="background:#e3e9f7;color:#007bff;">
+               Total: <strong>{{ present_count + absent_count }}</strong>
+            </div>
+          </div>
+          <form action="/notify" method="POST">
+            <div>
+              <label for="target">Send To:</label>
+              <select name="target" id="target" required>
+                <option value="all">All Students ({{ present_count + absent_count }})</option>
+                <option value="present">Present Students ({{ present_count }})</option>
+                <option value="absent">Absent Students ({{ absent_count }})</option>
+              </select>
+            </div>
+            <div>
+              <label for="message">Message:</label>
+              <textarea name="message" id="message" placeholder="Write your message..." required></textarea>
+            </div>
+            <button type="submit">📢 Send Notification</button>
+          </form>
+        </div>
       </section>
 
       <!-- Settings -->
@@ -221,6 +785,7 @@
         <p>Feature coming soon (change password, update profile, etc.).</p>
       </section>
     </div>
+  </div>
 
     <!-- JS -->
     <script>
@@ -235,21 +800,43 @@
         document.body.classList.toggle("dark");
       }
 
-      // Attendance Chart
-      const ctx = document.getElementById("attendanceChart");
-      if (ctx) {
-        new Chart(ctx, {
-          type: "doughnut",
+      // Attendance Bar Chart
+      const barCtx = document.getElementById("attendanceBarChart");
+      if (barCtx) {
+        new Chart(barCtx, {
+          type: "bar",
           data: {
             labels: ["Present", "Absent"],
             datasets: [{
+              label: "Number of Students",
               data: [{{ present_count|default(0) }}, {{ absent_count|default(0) }}],
-              backgroundColor: ["#28a745", "#dc3545"]
+              backgroundColor: [
+                "#28a745",
+                "#dc3545"
+              ],
+              borderRadius: 8,
+              maxBarThickness: 60
             }]
           },
           options: {
             responsive: true,
-            plugins: { legend: { position: "bottom" } }
+            plugins: {
+              legend: { display: false },
+              title: {
+                display: false
+              }
+            },
+            scales: {
+              x: {
+                grid: { display: false },
+                ticks: { font: { size: 16, weight: 'bold' }, color: "#34495e" }
+              },
+              y: {
+                beginAtZero: true,
+                grid: { color: "#e3e9f7" },
+                ticks: { stepSize: 1, font: { size: 14 }, color: "#34495e" }
+              }
+            }
           }
         });
       }

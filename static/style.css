@@ -55,13 +55,14 @@ a {
 .hero {
   text-align: center;
   padding: 5rem 2rem;
-  background: linear-gradient(120deg, #263159 80%, #fff 100%);
+  background: #263159; /* single color */
   color: #fff;
   min-height: 70vh;
   display: flex;
   justify-content: center;
   align-items: center;
 }
+
 .hero h1 {
   font-size: 3rem;
   margin-bottom: 1rem;

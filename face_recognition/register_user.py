@@ -2,6 +2,8 @@
 
 import sys, os, time, cv2, numpy as np, sqlite3
 from PIL import Image
+import tkinter as tk
+from tkinter import messagebox
 
 # Audio
 try:
@@ -34,6 +36,15 @@ face_cascade = cv2.CascadeClassifier(
     cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
 )
 
+def show_popup(title, message, is_error=False):
+    root = tk.Tk()
+    root.withdraw()  # Hide the main window
+    if is_error:
+        messagebox.showerror(title, message)
+    else:
+        messagebox.showinfo(title, message)
+    root.destroy()
+
 def speak(text):
     if not TTS_AVAILABLE: return
     try:
@@ -41,30 +52,30 @@ def speak(text):
         engine.say(text)
         engine.runAndWait()
     except Exception as e:
-        print("[WARN] Could not speak:", e)
+        show_popup("Warning", f"Could not speak: {e}", is_error=True)
 
 def record_voice(save_path, duration=4, samplerate=16000):
     if not AUDIO_AVAILABLE:
-        print("[INFO] Audio libraries missing; skipping voice sample.")
+        show_popup("Info", "Audio libraries missing; skipping voice sample.")
         return
     try:
         msg = "Please say: Hi, my name is, and then your name."
-        print(f"[INFO] Recording voice. {msg}")
+        show_popup("Voice Recording", f"Recording voice. {msg}")
         speak(msg)
         recording = sd.rec(int(duration * samplerate),
                            samplerate=samplerate,
                            channels=1, dtype='int16')
         sd.wait()
         sf.write(save_path, recording, samplerate)
-        print(f"[INFO] Voice saved at {save_path}")
+        show_popup("Success", f"Voice saved at {save_path}")
     except Exception as e:
-        print("[WARN] Voice record failed:", e)
+        show_popup("Warning", f"Voice record failed: {e}", is_error=True)
 
 def train_model():
     try:
         recognizer = cv2.face.LBPHFaceRecognizer_create()
     except:
-        print("[ERROR] Install opencv-contrib-python for LBPH")
+        show_popup("Error", "Install opencv-contrib-python for LBPH", is_error=True)
         return
     faces, ids = [], []
     for folder in os.listdir(TRAINED_DIR):
@@ -79,13 +90,13 @@ def train_model():
                     faces.append(img_np)
                     ids.append(int(folder))
                 except Exception as e:
-                    print("[WARN] skip",path,e)
+                    show_popup("Warning", f"Skipping {path}: {e}", is_error=True)
     if not faces:
-        print("[WARN] No faces found. Model not saved.")
+        show_popup("Warning", "No faces found. Model not saved.")
         return
     recognizer.train(faces,np.array(ids))
     recognizer.save(MODEL_PATH)
-    print(f"[INFO] Model trained & saved to {MODEL_PATH} with {len(faces)} images.")
+    show_popup("Success", f"Model trained & saved to {MODEL_PATH} with {len(faces)} images.")
 
 def insert_student(student_id, name, roll_no, email, guardian_no, guardian_email, admin_id=1):
     conn = sqlite3.connect(DB_PATH)
@@ -102,10 +113,12 @@ def capture_faces(student_id):
     os.makedirs(save_dir, exist_ok=True)
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
-        print("[ERROR] Cannot open webcam.")
+        show_popup("Error", "Cannot open webcam.", is_error=True)
         return False
 
-    print(f"[INFO] Warming up camera, scanning face for {WARMUP_TIME} seconds...")
+    cv2.namedWindow(f"Registering {student_id}", cv2.WINDOW_AUTOSIZE)
+
+    show_popup("Info", f"Warming up camera, scanning face for {WARMUP_TIME} seconds...")
     warm_start = time.time()
     while time.time() - warm_start < WARMUP_TIME:
         ret, frame = cap.read()
@@ -115,7 +128,7 @@ def capture_faces(student_id):
         cv2.imshow(f"Registering {student_id}", frame)
         if cv2.waitKey(1)&0xFF==ord('q'):break
 
-    print(f"[INFO] Capturing {NUM_IMAGES} faces for student {student_id}")
+    show_popup("Info", f"Capturing {NUM_IMAGES} faces for student {student_id}")
     count=0;last=0
     while count<NUM_IMAGES:
         ret,frame=cap.read()
@@ -128,7 +141,6 @@ def capture_faces(student_id):
             file_path=os.path.join(save_dir,f"{count+1}.jpg")
             cv2.imwrite(file_path,face)
             count+=1;last=time.time()
-            print(f"[INFO] saved {file_path} ({count}/{NUM_IMAGES})")
             cv2.rectangle(frame,(x,y),(x+w,y+h),(0,255,0),2)
         cv2.putText(frame, f"Capturing {count}/{NUM_IMAGES}", (10,30),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2)
@@ -136,15 +148,15 @@ def capture_faces(student_id):
         if cv2.waitKey(1)&0xFF==ord('q'):break
 
     cap.release();cv2.destroyAllWindows()
-    print(f"[INFO] Finished: {count}/{NUM_IMAGES} images.")
-    if count==0:return False
+    if count==0:
+        show_popup("Error", f"Failed to capture any faces.", is_error=True)
+        return False
 
     record_voice(os.path.join(save_dir,"voice.wav"),
                  duration=VOICE_DURATION,samplerate=SAMPLE_RATE)
     train_model()
     return True
 if __name__ == "__main__":
-    # Web mode if exactly 6 arguments are passed
     if len(sys.argv) == 7:
         student_id     = sys.argv[1]
         name           = sys.argv[2]
@@ -152,27 +164,17 @@ if __name__ == "__main__":
         email          = sys.argv[4]
         guardian_no    = sys.argv[5]
         guardian_email = sys.argv[6]
-        print(f"[INFO] Running in web mode for student {name} (ID: {student_id})")
     else:
-        # Terminal / manual mode
-        student_id     = input("Enter Student ID: ").strip()
-        name           = input("Enter Full Name: ").strip()
-        roll_no        = input("Enter Roll No: ").strip()
-        email          = input("Enter Email: ").strip()
-        guardian_no    = input("Enter Guardian No: ").strip()
-        guardian_email = input("Enter Guardian Email: ").strip()
-        print(f"[INFO] Running in terminal mode for student {name} (ID: {student_id})")
-
-    # Validate Student ID
-    if not student_id.isdigit():
-        print("[ERROR] Student ID must be numeric.")
+        show_popup("Error", "Incorrect number of arguments. Please register from the web portal.", is_error=True)
         sys.exit(1)
 
-    # Insert student into DB
+    if not student_id.isdigit():
+        show_popup("Error", "Student ID must be numeric.", is_error=True)
+        sys.exit(1)
+
     insert_student(student_id, name, roll_no, email, guardian_no, guardian_email)
 
-    # Capture faces & voice, train model
     if capture_faces(student_id):
-        print(f"[INFO] Registration complete for {name} (Roll {roll_no})")
+        show_popup("Success", f"Registration complete for {name} (Roll {roll_no})")
     else:
-        print("[ERROR] Registration failed.")
+        show_popup("Error", "Registration failed.", is_error=True)
