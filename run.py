@@ -1,10 +1,11 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash, make_response
 import sqlite3
 import os
 import sys
 import platform
 import subprocess
 from datetime import datetime
+import shutil
 
 from flask_mail import Mail, Message
 
@@ -96,6 +97,8 @@ def profile():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
+
+    # Fetch current admin info
     c.execute("SELECT * FROM admins WHERE id = ?", (session["admin_id"],))
     admin = c.fetchone()
     conn.close()
@@ -199,7 +202,7 @@ def api_register():
         return jsonify({"error": "Server error during registration"}), 500
 
 # ---- Dashboard ----
-@app.route("/dashboard")
+@app.route('/dashboard')
 def dashboard():
     if not is_logged_in():
         return redirect(url_for("login_page"))
@@ -208,12 +211,12 @@ def dashboard():
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
 
-    # Current admin
-    c.execute("SELECT * FROM admins WHERE id = ?", (session["admin_id"],))
-    admin = c.fetchone()
-
     # All students for this admin
-    c.execute("SELECT * FROM students WHERE admin_id = ?", (session["admin_id"],))
+    c.execute("""
+        SELECT id, student_id, name, roll_no, email, guardian_no, guardian_email
+        FROM students
+        WHERE admin_id = ?
+    """, (session["admin_id"],))
     students = c.fetchall()
 
     # Today's attendance counts
@@ -230,15 +233,41 @@ def dashboard():
     """, (today, session["admin_id"]))
     absent_count = c.fetchone()[0]
 
+    # Query all attendance records, join with student info (NO a.time)
+    attendance_records = c.execute(
+        """
+        SELECT a.id, a.student_id, s.name, s.roll_no, a.date, a.status
+        FROM attendance a
+        JOIN students s ON a.student_id = s.id
+        WHERE a.admin_id = ?
+        ORDER BY a.date DESC
+        """,
+        (session["admin_id"],)
+    ).fetchall()
+
+    attendance_records = [dict(zip(
+        ['id','student_id','name','roll_no','date','status'],
+        row
+    )) for row in attendance_records]
+
+    # Fetch current admin info
+    c.execute("SELECT * FROM admins WHERE id = ?", (session["admin_id"],))
+    admin = c.fetchone()
+
     conn.close()
 
-    return render_template(
+    response = make_response(render_template(
         "dashboard.html",
-        students=students,
         admin=admin,
         present_count=present_count,
-        absent_count=absent_count
-    )
+        absent_count=absent_count,
+        attendance_records=attendance_records,
+        total_students=students
+    ))
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
 
 @app.route("/logout")
 def logout():
@@ -421,6 +450,67 @@ def attendance_history(student_id):
     conn.close()
 
     return render_template("attendance_history.html", student=student, records=records)
+
+@app.route("/reset-data", methods=["POST"])
+def reset_data():
+    if not is_logged_in():
+        return redirect(url_for("login_page"))
+
+    choice = request.form.get("reset_choice")
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    DB_PATH = os.path.join(BASE_DIR, "database", "database.db")
+    TRAINED_DIR = os.path.join(BASE_DIR, "face_recognition", "trained_faces")
+
+    conn = None
+    if os.path.exists(DB_PATH):
+        conn = sqlite3.connect(DB_PATH)
+
+    msg = ""
+    try:
+        if choice == "1":
+            if conn:
+                conn.execute("DELETE FROM attendance;")
+                conn.commit()
+                msg = "All attendance history cleared."
+        elif choice == "2":
+            if conn:
+                conn.execute("DELETE FROM students;")
+                conn.execute("DELETE FROM attendance;")
+                conn.commit()
+                msg = "All students & their attendance cleared."
+        elif choice == "3":
+            if conn:
+                conn.execute("DELETE FROM admins;")
+                conn.execute("DELETE FROM students;")
+                conn.execute("DELETE FROM attendance;")
+                conn.commit()
+                msg = "All admins, students & attendance cleared."
+        elif choice == "4":
+            if os.path.exists(TRAINED_DIR):
+                shutil.rmtree(TRAINED_DIR)
+                msg = f"Trained faces folder removed."
+            else:
+                msg = "No trained faces folder found."
+        elif choice == "5":
+            if os.path.exists(DB_PATH):
+                if conn:
+                    conn.close()
+                os.remove(DB_PATH)
+                msg = "Database removed."
+            if os.path.exists(TRAINED_DIR):
+                shutil.rmtree(TRAINED_DIR)
+                msg += " Trained faces folder removed."
+            msg += " Everything wiped."
+        else:
+            msg = "Invalid choice."
+    except Exception as e:
+        msg = f"Error: {str(e)}"
+    finally:
+        if conn:
+            conn.close()
+
+    flash(msg, "info")
+    return redirect(url_for("dashboard"))
 
 # ---------------- Main ----------------
 if __name__ == "__main__":

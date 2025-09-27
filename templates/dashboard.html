@@ -213,294 +213,7 @@
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        backgr<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Admin Dashboard - smartAttendX</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='style.css') }}"
-    />
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  </head>
-  <body>
-    <div class="dashboard-container">
-      <aside class="sidebar">
-        <div class="profile">
-          <a href="{{ url_for('profile') }}">
-            <img
-              src="{{ url_for('static', filename=admin.profile_pic if admin.profile_pic else 'images/default.png') }}"
-              alt="Profile Picture"
-              class="profile-pic"
-            />
-            <span>{{ admin['name'] }}</span>
-          </a>
-        </div>
-        <nav class="sidebar-menu">
-          <a href="#" onclick="showSection('startAttendance')" class="menu-link"
-            >📋 Start Attendance</a
-          >
-          <a href="#" onclick="showSection('viewAttendance')" class="menu-link"
-            >👁 View Attendance</a
-          >
-          <a
-            href="#"
-            onclick="showSection('registerStudent')"
-            class="menu-link"
-            >➕ Register Student</a
-          >
-          <a href="#" onclick="showSection('notify')" class="menu-link"
-            >📢 Notify</a
-          >
-          <a href="#" onclick="showSection('settings')" class="menu-link"
-            >⚙ Settings</a
-          >
-          <a href="#" onclick="toggleTheme()" class="menu-link">🌙 Toggle Theme</a>
-          <a href="{{ url_for('logout') }}" class="menu-link">🚪 Logout</a>
-        </nav>
-      </aside>
-      <main class="content">
-        <section id="startAttendance">
-          <div class="card">
-            <h2>Start Attendance</h2>
-            <form action="/start-attendance" method="POST">
-              <p>
-                Run the face recognizer to automatically mark student
-                attendance.
-              </p>
-              <button type="submit">▶ Run Face Recognizer</button>
-            </form>
-          </div>
-        </section>
-
-        <section id="viewAttendance" class="hidden">
-          <div class="card">
-            <h2>View Attendance</h2>
-            <div class="chart-container">
-              <h3>Today's Overview</h3>
-              <canvas id="attendanceBarChart"></canvas>
-            </div>
-            <h3>Student List</h3>
-            <div class="table-container">
-              <table>
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Roll No</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for student in students %}
-                  <tr>
-                    <td>{{ student.id }}</td>
-                    <td>{{ student.name }}</td>
-                    <td>{{ student.roll_no }}</td>
-                    <td>
-                      <a href="{{ url_for('attendance_history', student_id=student.id) }}" class="history-link">📅 View History</a>
-                    </td>
-                  </tr>
-                  {% else %}
-                  <tr>
-                    <td colspan="4">No students found.</td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <section id="registerStudent" class="hidden">
-          <div class="card form-card">
-            <h2>Register New Student</h2>
-            <form action="/register-student" method="POST">
-              <div class="form-group">
-                <label for="student_id">Student ID</label>
-                <input
-                  type="number"
-                  id="student_id"
-                  name="student_id"
-                  placeholder="e.g. 1001"
-                  required
-                />
-              </div>
-              <div class="form-group">
-                <label for="name">Full Name</label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  placeholder="e.g. Jane Doe"
-                  required
-                />
-              </div>
-              <div class="form-group">
-                <label for="email">Student Email</label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  placeholder="e.g. jane@email.com"
-                  required
-                />
-              </div>
-              <div class="form-group">
-                <label for="roll_no">Roll No</label>
-                <input
-                  type="number"
-                  id="roll_no"
-                  name="roll_no"
-                  placeholder="e.g. 12"
-                  required
-                />
-              </div>
-              <div class="form-group">
-                <label for="guardian_no">Guardian Contact No</label>
-                <input
-                  type="number"
-                  id="guardian_no"
-                  name="guardian_no"
-                  placeholder="e.g. 9876543210"
-                  required
-                />
-              </div>
-              <div class="form-group">
-                <label for="guardian_email">Guardian Email</label>
-                <input
-                  type="email"
-                  id="guardian_email"
-                  name="guardian_email"
-                  placeholder="e.g. parent@email.com"
-                  required
-                />
-              </div>
-              <button type="submit" class="cta-button">
-                ➕ Register Student
-              </button>
-            </form>
-          </div>
-        </section>
-
-        <section id="notify" class="hidden">
-          <div class="card form-card">
-            <h2>Send Notifications</h2>
-            <div class="stats-row">
-              <div class="stat-pill present">
-                ✅ Present: <strong>{{ present_count }}</strong>
-              </div>
-              <div class="stat-pill absent">
-                ❌ Absent: <strong>{{ absent_count }}</strong>
-              </div>
-              <div class="stat-pill total">
-                👥 Total: <strong>{{ present_count + absent_count }}</strong>
-              </div>
-            </div>
-            <form action="/notify" method="POST">
-              <div class="form-group">
-                <label for="target">Send To:</label>
-                <select name="target" id="target" required>
-                  <option value="all">
-                    All Students ({{ present_count + absent_count }})
-                  </option>
-                  <option value="present">
-                    Present Students ({{ present_count }})
-                  </option>
-                  <option value="absent">
-                    Absent Students ({{ absent_count }})
-                  </option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="message">Message:</label>
-                <textarea
-                  name="message"
-                  id="message"
-                  placeholder="Write your message..."
-                  required
-                ></textarea>
-              </div>
-              <button type="submit" class="cta-button">
-                📢 Send Notification
-              </button>
-            </form>
-          </div>
-        </section>
-
-        <section id="settings" class="hidden">
-          <div class="card">
-            <h2>Settings</h2>
-            <p>Feature coming soon (change password, update profile, etc.).</p>
-          </div>
-        </section>
-      </main>
-    </div>
-
-    <script>
-      function showSection(sectionId) {
-        document.querySelectorAll("main section").forEach((sec) => {
-          sec.classList.add("hidden");
-        });
-        document.getElementById(sectionId).classList.remove("hidden");
-      }
-      function toggleTheme() {
-        document.body.classList.toggle("dark");
-      }
-      const barCtx = document.getElementById("attendanceBarChart");
-      if (barCtx) {
-        new Chart(barCtx, {
-          type: "bar",
-          data: {
-            labels: ["Present", "Absent"],
-            datasets: [
-              {
-                label: "Number of Students",
-                data: [
-                  {{ present_count|default(0) }},
-                  {{ absent_count|default(0) }},
-                ],
-                backgroundColor: ["#28a745", "#dc3545"],
-                borderRadius: 8,
-                maxBarThickness: 60,
-              },
-            ],
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              legend: { display: false },
-              title: {
-                display: false,
-              },
-            },
-            scales: {
-              x: {
-                grid: { display: false },
-                ticks: { font: { size: 16, weight: "bold" } },
-              },
-              y: {
-                beginAtZero: true,
-                grid: { color: "rgba(0, 0, 0, 0.05)" },
-                ticks: { stepSize: 1, font: { size: 14 } },
-              },
-            },
-          },
-        });
-      }
-    </script>
-  </body>
-</html>ound: #e3e9f7;
+        background: #e3e9f7;
         color: #222;
         border-radius: 20px;
         padding: 0.5rem 1.2rem;
@@ -649,148 +362,236 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
   <body>
-  <div class="dashboard-container">
-    <!-- Sidebar -->
-    <div class="sidebar">
-      <div class="profile">
-        <a href="{{ url_for('profile') }}">
-          <img src="{{ url_for('static', filename=admin.profile_pic if admin.profile_pic else 'images/default.png') }}"
-               alt="Profile Picture" class="profile-pic">
-          <span>{{ admin['name'] }}</span>
-        </a>
-      </div>
-      <a href="#" onclick="showSection('startAttendance')" class="menu-link">📋 Start Attendance</a>
-      <a href="#" onclick="showSection('viewAttendance')" class="menu-link">👁 View Attendance</a>
-      <a href="#" onclick="showSection('registerStudent')" class="menu-link">➕ Register Student</a>
-      <a href="#" onclick="showSection('notify')" class="menu-link">📢 Notify</a>
-      <a href="#" onclick="toggleTheme()" class="menu-link">🌙 Toggle Theme</a>
-      <a href="#" onclick="showSection('settings')" class="menu-link">⚙ Settings</a>
-      <a href="{{ url_for('logout') }}" class="menu-link">🚪 Logout</a>
-    </div>
-    <!-- Main Content -->
-    <div class="content">
-      <!-- Start Attendance -->
-      <section id="startAttendance" class="">
-        <h2>Start Attendance</h2>
-        <form action="/start-attendance" method="POST">
-          <button type="submit">▶ Run Face Recognizer</button>
-        </form>
-        <p>Attendance recognizer will open and mark students automatically.</p>
-      </section>
-
-      <!-- View Attendance -->
-      <section id="viewAttendance" class="hidden">
-        <h2>View Attendance</h2>
-        <div style="max-width: 500px; margin: 0 auto 2rem auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.07); padding: 2rem;">
-          <h3 style="text-align:center; color:#007bff; margin-bottom:1rem;">Attendance Overview</h3>
-          <canvas id="attendanceBarChart" height="180"></canvas>
+    <div class="dashboard-container">
+      <aside class="sidebar">
+        <div class="profile">
+          <a href="{{ url_for('profile') }}">
+            <img
+              src="{{ url_for('static', filename=admin.profile_pic if admin.profile_pic else 'images/default.png') }}"
+              alt="Profile Picture"
+              class="profile-pic"
+            />
+            <span>{{ admin['name'] }}</span>
+          </a>
         </div>
-        <h3>Student List</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Name</th>
-              <th>Roll No</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for student in students %}
-            <tr>
-              <td>{{ student.id }}</td>
-              <td>{{ student.name }}</td>
-              <td>{{ student.roll_no }}</td>
-              <td>
-                <a href="{{ url_for('attendance_history', student_id=student.id) }}">📅 View History</a>
-              </td>
-            </tr>
-            {% else %}
-            <tr>
-              <td colspan="4">No students found.</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </section>
-
-      <!-- Register Student -->
-      <section id="registerStudent" class="hidden">
-        <div class="register-card">
-          <h2>Register New Student</h2>
-          <form action="/register-student" method="POST">
-            <div>
-              <label for="student_id">Student ID</label>
-              <input type="number" id="student_id" name="student_id" placeholder="e.g. 1001" required>
-            </div>
-            <div>
-              <label for="name">Full Name</label>
-              <input type="text" id="name" name="name" placeholder="e.g. Jane Doe" required>
-            </div>
-            <div>
-              <label for="email">Student Email</label>
-              <input type="email" id="email" name="email" placeholder="e.g. jane@email.com" required>
-            </div>
-            <div>
-              <label for="roll_no">Roll No</label>
-              <input type="number" id="roll_no" name="roll_no" placeholder="e.g. 12" required>
-            </div>
-            <div>
-              <label for="guardian_no">Guardian Contact No</label>
-              <input type="number" id="guardian_no" name="guardian_no" placeholder="e.g. 9876543210" required>
-            </div>
-            <div>
-              <label for="guardian_email">Guardian Email</label>
-              <input type="email" id="guardian_email" name="guardian_email" placeholder="e.g. parent@email.com" required>
-            </div>
-            <button type="submit">
-              Register Student
-            </button>
-          </form>
-        </div>
-      </section>
-
-      <!-- Notify -->
-      <section id="notify" class="hidden">
-        <div class="notify-card">
-          <h2>Send Notifications</h2>
-          <div class="stats-row">
-            <div class="stat-pill present"> Present: <strong>{{ present_count }}</strong></div>
-            <div class="stat-pill absent"> Absent: <strong>{{ absent_count }}</strong></div>
-            <div class="stat-pill" style="background:#e3e9f7;color:#007bff;">
-               Total: <strong>{{ present_count + absent_count }}</strong>
+        <nav class="sidebar-menu">
+          <a href="#" onclick="showSection('startAttendance')" class="menu-link">📋 Start Attendance</a>
+          <a href="#" onclick="showSection('viewAttendance')" class="menu-link">👁 View Attendance</a>
+          <a href="#" onclick="showSection('totalStudents')" class="menu-link">👥 Total Students</a>
+          <a href="#" onclick="showSection('registerStudent')" class="menu-link">➕ Register Student</a>
+          <a href="#" onclick="showSection('notify')" class="menu-link">📢 Notify</a>
+          <a href="#" onclick="toggleTheme()" class="menu-link">🌙 Toggle Theme</a>
+          <a href="#" onclick="showSection('settings')" class="menu-link">⚙ Settings</a>
+          <a href="{{ url_for('logout') }}" class="menu-link">🚪 Logout</a>
+        </nav>
+      </aside>
+      <main class="content">
+        <section id="startAttendance">
+          <div class="card">
+            <h2>Start Attendance</h2>
+            <form id="attendanceForm" action="/start-attendance" method="POST">
+              <p>
+                Run the face recognizer to automatically mark student attendance.
+              </p>
+              <button type="submit" id="startAttendanceBtn">▶ Run Face Recognizer</button>
+              <button type="button" id="stopAttendanceBtn" style="margin-left:1em;">■ Stop Attendance</button>
+            </form>
+            <div id="attendanceWindow" style="margin-top:2rem; min-height:300px; background:#f4f8ff; border-radius:10px; box-shadow:0 2px 8px #e3e9f7; padding:2rem;">
+              <!-- Camera feed will appear here -->
             </div>
           </div>
-          <form action="/notify" method="POST">
-            <div>
-              <label for="target">Send To:</label>
-              <select name="target" id="target" required>
-                <option value="all">All Students ({{ present_count + absent_count }})</option>
-                <option value="present">Present Students ({{ present_count }})</option>
-                <option value="absent">Absent Students ({{ absent_count }})</option>
+        </section>
+
+        <section id="viewAttendance" class="hidden">
+          <div class="card">
+            <h2>View Attendance</h2>
+            <div class="chart-container" style="max-width:400px;">
+              <h3>Today's Overview</h3>
+              <canvas id="attendanceBarChart" width="400" height="300"></canvas>
+            </div>
+            <h3>Student List</h3>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Roll No</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for student in students %}
+                  <tr>
+                    <td>{{ student.id }}</td>
+                    <td>{{ student.name }}</td>
+                    <td>{{ student.roll_no }}</td>
+                    <td>
+                      <a href="{{ url_for('attendance_history', student_id=student.id) }}" class="history-link">📅 View History</a>
+                    </td>
+                  </tr>
+                  {% else %}
+                  <tr>
+                    <td colspan="4">No students found.</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="registerStudent" class="hidden">
+          <div class="card form-card">
+            <h2>Register New Student</h2>
+            <form action="/register-student" method="POST">
+              <div class="form-group">
+                <label for="student_id">Student ID</label>
+                <input
+                  type="number"
+                  id="student_id"
+                  name="student_id"
+                  placeholder="e.g. 1001"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="name">Full Name</label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  placeholder="e.g. Jane Doe"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="email">Student Email</label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  placeholder="e.g. jane@email.com"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="roll_no">Roll No</label>
+                <input
+                  type="number"
+                  id="roll_no"
+                  name="roll_no"
+                  placeholder="e.g. 12"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="guardian_no">Guardian Contact No</label>
+                <input
+                  type="number"
+                  id="guardian_no"
+                  name="guardian_no"
+                  placeholder="e.g. 9876543210"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="guardian_email">Guardian Email</label>
+                <input
+                  type="email"
+                  id="guardian_email"
+                  name="guardian_email"
+                  placeholder="e.g. parent@email.com"
+                  required
+                />
+              </div>
+              <button type="submit" class="cta-button">
+                ➕ Register Student
+              </button>
+            </form>
+          </div>
+        </section>
+
+        <section id="notify" class="hidden">
+          <div>
+            <h2>Notify Students</h2>
+            <form action="/notify" method="POST">
+              <div style="margin-bottom: 1em;">
+                <label for="target">Recipient:</label>
+                <select name="target" id="target" required>
+                  <option value="all">All Students</option>
+                  <option value="present">Present Students</option>
+                  <option value="absent">Absent Students</option>
+                </select>
+              </div>
+              <div style="margin-bottom: 1em;">
+                <label for="message">Message:</label><br>
+                <textarea name="message" id="message" rows="4" style="width:100%;" required></textarea>
+              </div>
+              <button type="submit">Send Notification</button>
+            </form>
+          </div>
+        </section>
+
+        <section id="settings" class="hidden">
+          <div class="card">
+            <h2>Settings</h2>
+            <form action="/reset-data" method="POST" onsubmit="return confirm('Are you sure you want to reset? This action cannot be undone!');">
+              <label for="reset_choice">Reset Options:</label>
+              <select name="reset_choice" id="reset_choice" required>
+                <option value="1">Clear only attendance history</option>
+                <option value="2">Clear all students but keep admins</option>
+                <option value="3">Clear all admins (and everything)</option>
+                <option value="4">Clear trained faces folder</option>
+                <option value="5">Clear EVERYTHING (database + faces)</option>
               </select>
-            </div>
-            <div>
-              <label for="message">Message:</label>
-              <textarea name="message" id="message" placeholder="Write your message..." required></textarea>
-            </div>
-            <button type="submit">📢 Send Notification</button>
-          </form>
-        </div>
-      </section>
+              <br><br>
+              <button type="submit">Reset</button>
+            </form>
+            <p style="color: #dc3545; margin-top: 1em;">Warning: Reset actions cannot be undone!</p>
+          </div>
+        </section>
 
-      <!-- Settings -->
-      <section id="settings" class="hidden">
-        <h2>Settings</h2>
-        <p>Feature coming soon (change password, update profile, etc.).</p>
-      </section>
+        <section id="totalStudents" class="hidden">
+          <div class="card">
+            <h2>Total Students</h2>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Roll</th>
+                    <th>Name</th>
+                    <th>Guardian No</th>
+                    <th>Email</th>
+                    <th>Guardian Email</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for student in total_students %}
+                  <tr>
+                    
+                    <td>{{ student.roll_no }}</td>
+                    <td>{{ student.name }}</td>
+                    <td>{{ student.guardian_no }}</td>
+                    <td>{{ student.email }}</td>
+                    <td>{{ student.guardian_email }}</td>
+                  </tr>
+                  {% else %}
+                  <tr>
+                    <td colspan="5">No students found.</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </main>
     </div>
-  </div>
 
-    <!-- JS -->
     <script>
       function showSection(sectionId) {
-        document.querySelectorAll(".content section").forEach(sec => {
+        document.querySelectorAll("main section, .content section").forEach((sec) => {
           sec.classList.add("hidden");
         });
         document.getElementById(sectionId).classList.remove("hidden");
@@ -800,46 +601,72 @@
         document.body.classList.toggle("dark");
       }
 
-      // Attendance Bar Chart
+      // Bar chart setup
       const barCtx = document.getElementById("attendanceBarChart");
       if (barCtx) {
         new Chart(barCtx, {
           type: "bar",
           data: {
             labels: ["Present", "Absent"],
-            datasets: [{
-              label: "Number of Students",
-              data: [{{ present_count|default(0) }}, {{ absent_count|default(0) }}],
-              backgroundColor: [
-                "#28a745",
-                "#dc3545"
-              ],
-              borderRadius: 8,
-              maxBarThickness: 60
-            }]
+            datasets: [
+              {
+                label: "Number of Students",
+                data: [
+                  {{ present_count|default(0) }},
+                  {{ absent_count|default(0) }},
+                ],
+                backgroundColor: ["#28a745", "#dc3545"],
+                borderRadius: 8,
+                maxBarThickness: 60,
+              },
+            ],
           },
           options: {
-            responsive: true,
+            responsive: false, // disables auto-resize
+            maintainAspectRatio: false,
             plugins: {
               legend: { display: false },
-              title: {
-                display: false
-              }
+              title: { display: false },
             },
             scales: {
               x: {
                 grid: { display: false },
-                ticks: { font: { size: 16, weight: 'bold' }, color: "#34495e" }
+                ticks: { font: { size: 16, weight: "bold" } },
               },
               y: {
                 beginAtZero: true,
-                grid: { color: "#e3e9f7" },
-                ticks: { stepSize: 1, font: { size: 14 }, color: "#34495e" }
-              }
-            }
-          }
+                grid: { color: "rgba(0, 0, 0, 0.05)" },
+                ticks: { stepSize: 1, font: { size: 14 } },
+                suggestedMax: {{ present_count + absent_count if present_count + absent_count > 0 else 10 }},
+                // You can set a fixed max, e.g. max: 50, if you want
+              },
+            },
+          },
         });
       }
+
+      document.getElementById("attendanceForm").addEventListener("submit", function(e) {
+        // Show the window and display a message
+        const win = document.getElementById("attendanceWindow");
+        win.style.display = "block";
+        win.innerHTML = "<h3>Attendance is being marked...</h3><p>The face recognizer is running. Please wait for completion.</p>";
+        // Allow form to submit normally (remove e.preventDefault() if you want to POST)
+        // If you want to prevent page reload and handle everything via AJAX, use e.preventDefault();
+      });
+
+document.getElementById("startAttendanceBtn").onclick = function() {
+  // ...camera code...
+};
+
+document.getElementById("stopAttendanceBtn").onclick = function() {
+  const win = document.getElementById("attendanceWindow");
+  if (currentStream) {
+    currentStream.getTracks().forEach(track => track.stop());
+    currentStream = null;
+  }
+  win.innerHTML = "<p>Attendance stopped.</p>";
+};
+
     </script>
   </body>
 </html>
