@@ -202,6 +202,8 @@ def api_register():
         return jsonify({"error": "Server error during registration"}), 500
 
 # ---- Dashboard ----
+from datetime import datetime
+
 @app.route('/dashboard')
 def dashboard():
     if not is_logged_in():
@@ -218,6 +220,54 @@ def dashboard():
         WHERE admin_id = ?
     """, (session["admin_id"],))
     students = c.fetchall()
+
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    # Get attendance stats for today
+    c.execute("""
+        SELECT COUNT(*) FROM attendance
+        WHERE date = ? AND status = 'Present' AND admin_id = ?
+    """, (today, session["admin_id"]))
+    present_count = c.fetchone()[0]
+
+    c.execute("""
+        SELECT COUNT(*) FROM attendance
+        WHERE date = ? AND status = 'Absent' AND admin_id = ?
+    """, (today, session["admin_id"]))
+    absent_count = c.fetchone()[0]
+
+    # Attendance records (optional)
+    attendance_records = c.execute(
+        """
+        SELECT a.id, a.student_id, s.name, s.roll_no, a.date, a.status
+        FROM attendance a
+        JOIN students s ON a.student_id = s.id
+        WHERE a.admin_id = ?
+        ORDER BY a.date DESC
+        """,
+        (session["admin_id"],)
+    ).fetchall()
+
+    attendance_records = [dict(zip(
+        ['id','student_id','name','roll_no','date','status'],
+        row
+    )) for row in attendance_records]
+
+    # Fetch current admin info
+    c.execute("SELECT * FROM admins WHERE id = ?", (session["admin_id"],))
+    admin = c.fetchone()
+
+    conn.close()
+
+    return render_template(
+        "dashboard.html",
+        admin=admin,
+        present_count=present_count,
+        absent_count=absent_count,
+        total_students=students,
+        datetime=datetime   # ✅ pass datetime object to template
+    )
+
 
     # Today's attendance counts
     today = datetime.now().strftime("%Y-%m-%d")
@@ -511,6 +561,35 @@ def reset_data():
 
     flash(msg, "info")
     return redirect(url_for("dashboard"))
+
+#date  picker 
+
+@app.route("/get-attendance/<date>")
+def get_attendance(date):
+    if not is_logged_in():
+        return redirect(url_for("login_page"))
+
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+
+    c.execute("""
+        SELECT 
+            s.name, 
+            s.roll_no, 
+            COALESCE(a.status, 'Absent') AS status
+        FROM students s
+        LEFT JOIN attendance a 
+            ON s.id = a.student_id 
+            AND a.date = ?
+        WHERE s.admin_id = ?
+        ORDER BY s.roll_no
+    """, (date, session["admin_id"]))
+    
+    rows = [dict(r) for r in c.fetchall()]
+    conn.close()
+    return jsonify(rows)
+
 
 # ---------------- Main ----------------
 if __name__ == "__main__":

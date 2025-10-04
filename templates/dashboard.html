@@ -356,6 +356,36 @@
       body.dark th {
         background: #444;
       }
+
+      .date-filter {
+        margin-top: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+      .date-filter label {
+        font-weight: 600;
+      }
+      .date-filter input[type="date"] {
+        padding: 0.4rem 0.6rem;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+      }
+      .date-filter button {
+        padding: 0.5rem 1rem;
+        border-radius: 5px;
+        background: #007bff;
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      .date-filter button:hover {
+        background: #0056b3;
+      }
+      .status-present { color: #28a745; font-weight: 600; }
+      .status-absent { color: #dc3545; font-weight: 600; }
     </style>
 
     <!-- 📦 Chart.js -->
@@ -380,7 +410,7 @@
           <a href="#" onclick="showSection('totalStudents')" class="menu-link">👥 Total Students</a>
           <a href="#" onclick="showSection('registerStudent')" class="menu-link">➕ Register Student</a>
           <a href="#" onclick="showSection('notify')" class="menu-link">📢 Notify</a>
-          <a href="#" onclick="toggleTheme()" class="menu-link">🌙 Toggle Theme</a>
+         
           <a href="#" onclick="showSection('settings')" class="menu-link">⚙ Settings</a>
           <a href="{{ url_for('logout') }}" class="menu-link">🚪 Logout</a>
         </nav>
@@ -402,44 +432,37 @@
           </div>
         </section>
 
-        <section id="viewAttendance" class="hidden">
+         <section id="viewAttendance" class="hidden">
           <div class="card">
             <h2>View Attendance</h2>
-            <div class="chart-container" style="max-width:400px;">
-              <h3>Today's Overview</h3>
-              <canvas id="attendanceBarChart" width="400" height="300"></canvas>
+
+            <div class="date-filter">
+              <label>Select Date:</label>
+              <input type="date" id="attendanceDate" />
+              <button id="todayBtn">Today</button>
+              <button id="yesterdayBtn">Yesterday</button>
             </div>
-            <h3>Student List</h3>
-            <div class="table-container">
-              <table>
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Roll No</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for student in students %}
-                  <tr>
-                    <td>{{ student.id }}</td>
-                    <td>{{ student.name }}</td>
-                    <td>{{ student.roll_no }}</td>
-                    <td>
-                      <a href="{{ url_for('attendance_history', student_id=student.id) }}" class="history-link">📅 View History</a>
-                    </td>
-                  </tr>
-                  {% else %}
-                  <tr>
-                    <td colspan="4">No students found.</td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
+
+            <div style="margin-top: 1rem;">
+              <h3>Summary for <span id="selectedDateText">{{ datetime.now().strftime('%Y-%m-%d') }}</span></h3>
+              <p>Total Students: <strong id="totalStudentsCount">{{ total_students|length }}</strong></p>
             </div>
+
+            <table id="attendanceTable" style="margin-top: 1rem; width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr>
+                  <th>Roll No</th>
+                  <th>Name</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="attendanceBody">
+                <!-- Filled dynamically -->
+              </tbody>
+            </table>
           </div>
         </section>
+
 
         <section id="registerStudent" class="hidden">
           <div class="card form-card">
@@ -550,6 +573,9 @@
             </form>
             <p style="color: #dc3545; margin-top: 1em;">Warning: Reset actions cannot be undone!</p>
           </div>
+           <div>
+            <a href="#" onclick="toggleTheme()" class="menu-link" style="background-color:#34495e,  ;">🌙 Toggle Theme</a>
+           </div>
         </section>
 
         <section id="totalStudents" class="hidden">
@@ -589,84 +615,174 @@
       </main>
     </div>
 
-    <script>
-      function showSection(sectionId) {
-        document.querySelectorAll("main section, .content section").forEach((sec) => {
-          sec.classList.add("hidden");
-        });
-        document.getElementById(sectionId).classList.remove("hidden");
-      }
+   <script>
+/* ──────────────────────────────────────────────
+   🔹 1. Section Navigation
+   ────────────────────────────────────────────── */
+function showSection(sectionId) {
+  // Hide all sections first
+  document.querySelectorAll("main section").forEach((sec) => sec.classList.add("hidden"));
+  // Show only the selected section
+  const target = document.getElementById(sectionId);
+  target.classList.remove("hidden");
 
-      function toggleTheme() {
-        document.body.classList.toggle("dark");
-      }
+  // ✅ Load today's attendance only when "View Attendance" tab is opened
+  if (sectionId === "viewAttendance") {
+    const today = new Date().toISOString().split("T")[0];
+    document.getElementById("attendanceDate").value = today;
+    document.getElementById("selectedDateText").textContent = today;
+    loadAttendanceByDate(today);
+  }
+}
 
-      // Bar chart setup
-      const barCtx = document.getElementById("attendanceBarChart");
-      if (barCtx) {
-        new Chart(barCtx, {
-          type: "bar",
-          data: {
-            labels: ["Present", "Absent"],
-            datasets: [
-              {
-                label: "Number of Students",
-                data: [
-                  {{ present_count|default(0) }},
-                  {{ absent_count|default(0) }},
-                ],
-                backgroundColor: ["#28a745", "#dc3545"],
-                borderRadius: 8,
-                maxBarThickness: 60,
-              },
-            ],
-          },
-          options: {
-            responsive: false, // disables auto-resize
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { display: false },
-              title: { display: false },
-            },
-            scales: {
-              x: {
-                grid: { display: false },
-                ticks: { font: { size: 16, weight: "bold" } },
-              },
-              y: {
-                beginAtZero: true,
-                grid: { color: "rgba(0, 0, 0, 0.05)" },
-                ticks: { stepSize: 1, font: { size: 14 } },
-                suggestedMax: {{ present_count + absent_count if present_count + absent_count > 0 else 10 }},
-                // You can set a fixed max, e.g. max: 50, if you want
-              },
-            },
-          },
-        });
-      }
+/* ──────────────────────────────────────────────
+   🔹 2. Theme Toggle (Dark/Light Mode)
+   ────────────────────────────────────────────── */
+function toggleTheme() {
+  document.body.classList.toggle("dark");
+}
 
-      document.getElementById("attendanceForm").addEventListener("submit", function(e) {
-        // Show the window and display a message
-        const win = document.getElementById("attendanceWindow");
-        win.style.display = "block";
-        win.innerHTML = "<h3>Attendance is being marked...</h3><p>The face recognizer is running. Please wait for completion.</p>";
-        // Allow form to submit normally (remove e.preventDefault() if you want to POST)
-        // If you want to prevent page reload and handle everything via AJAX, use e.preventDefault();
-      });
+/* ──────────────────────────────────────────────
+   🔹 3. Attendance Chart (Bar Chart for Today)
+   ────────────────────────────────────────────── */
+const barCtx = document.getElementById("attendanceBarChart");
+if (barCtx) {
+  new Chart(barCtx, {
+    type: "bar",
+    data: {
+      labels: ["Present", "Absent"],
+      datasets: [
+        {
+          label: "Number of Students",
+          data: [
+            {{ present_count|default(0) }},
+            {{ absent_count|default(0) }},
+          ],
+          backgroundColor: ["#28a745", "#dc3545"],
+          borderRadius: 8,
+          maxBarThickness: 60,
+        },
+      ],
+    },
+    options: {
+      responsive: false,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: { size: 16, weight: "bold" } },
+        },
+        y: {
+          beginAtZero: true,
+          grid: { color: "rgba(0,0,0,0.05)" },
+          ticks: { stepSize: 1, font: { size: 14 } },
+          suggestedMax: {{ present_count + absent_count if present_count + absent_count > 0 else 10 }},
+        },
+      },
+    },
+  });
+}
+
+/* ──────────────────────────────────────────────
+   🔹 4. Start/Stop Attendance Buttons
+   ────────────────────────────────────────────── */
+document.getElementById("attendanceForm").addEventListener("submit", function(e) {
+  // Display message when recognizer starts
+  const win = document.getElementById("attendanceWindow");
+  win.style.display = "block";
+  win.innerHTML = "<h3>Attendance is being marked...</h3><p>The face recognizer is running. Please wait for completion.</p>";
+});
 
 document.getElementById("startAttendanceBtn").onclick = function() {
-  // ...camera code...
+  // Placeholder for potential future live camera integration
+  console.log("Attendance started");
 };
 
 document.getElementById("stopAttendanceBtn").onclick = function() {
+  // Stop any running camera stream (if used in future)
   const win = document.getElementById("attendanceWindow");
-  if (currentStream) {
+  if (typeof currentStream !== "undefined" && currentStream) {
     currentStream.getTracks().forEach(track => track.stop());
     currentStream = null;
   }
   win.innerHTML = "<p>Attendance stopped.</p>";
 };
 
-    </script>
+/* ──────────────────────────────────────────────
+   🔹 5. Dynamic Attendance Viewer (Date Picker)
+   ────────────────────────────────────────────── */
+
+// Function to fetch and show attendance data by selected date
+async function loadAttendanceByDate(dateStr) {
+  const tbody = document.getElementById("attendanceBody");
+  const dateText = document.getElementById("selectedDateText");
+
+  tbody.innerHTML = "<tr><td colspan='3'>Loading...</td></tr>";
+
+  try {
+    // Fetch attendance records from Flask backend
+    const res = await fetch(`/get-attendance/${dateStr}`);
+    const data = await res.json();
+
+    tbody.innerHTML = "";
+    if (data.length === 0) {
+      tbody.innerHTML = "<tr><td colspan='3'>No records found for this date.</td></tr>";
+    } else {
+      data.forEach(row => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${row.roll_no || '-'}</td>
+          <td>${row.name}</td>
+          <td class="${row.status === 'Present' ? 'status-present' : 'status-absent'}">${row.status}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+    dateText.textContent = dateStr;
+  } catch (err) {
+    console.error(err);
+    tbody.innerHTML = "<tr><td colspan='3'>Error loading data.</td></tr>";
+  }
+}
+
+/* ──────────────────────────────────────────────
+   🔹 6. Quick Date Buttons (Today / Yesterday)
+   ────────────────────────────────────────────── */
+const todayBtn = document.getElementById("todayBtn");
+const yesterdayBtn = document.getElementById("yesterdayBtn");
+const datePicker = document.getElementById("attendanceDate");
+
+// Load today's records
+todayBtn.addEventListener("click", () => {
+  const today = new Date().toISOString().split("T")[0];
+  datePicker.value = today;
+  loadAttendanceByDate(today);
+});
+
+// Load yesterday's records
+yesterdayBtn.addEventListener("click", () => {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  const yest = d.toISOString().split("T")[0];
+  datePicker.value = yest;
+  loadAttendanceByDate(yest);
+});
+
+// When date manually selected from picker
+datePicker.addEventListener("change", (e) => {
+  loadAttendanceByDate(e.target.value);
+});
+
+/* ──────────────────────────────────────────────
+   🔹 7. Default Page Behavior
+   ────────────────────────────────────────────── */
+// Don’t auto-load attendance on page reload
+// Default visible section will be the dashboard or first one in HTML
+// Attendance will load only when user clicks "View Attendance"
+</script>
+
   </body>
 </html>
