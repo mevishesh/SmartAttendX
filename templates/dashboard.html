@@ -579,39 +579,70 @@
         </section>
 
         <section id="totalStudents" class="hidden">
-          <div class="card">
-            <h2>Total Students</h2>
-            <div class="table-container">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Roll</th>
-                    <th>Name</th>
-                    <th>Guardian No</th>
-                    <th>Email</th>
-                    <th>Guardian Email</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for student in total_students %}
-                  <tr>
-                    
-                    <td>{{ student.roll_no }}</td>
-                    <td>{{ student.name }}</td>
-                    <td>{{ student.guardian_no }}</td>
-                    <td>{{ student.email }}</td>
-                    <td>{{ student.guardian_email }}</td>
-                  </tr>
-                  {% else %}
-                  <tr>
-                    <td colspan="5">No students found.</td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
+  <div class="card">
+    <h2>Total Students</h2>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Roll</th>
+            <th>Name</th>
+            <th>Guardian No</th>
+            <th>Email</th>
+            <th>Guardian Email</th>
+            <th>Actions</th> <!-- ✅ New Column -->
+          </tr>
+        </thead>
+        <tbody>
+          {% for student in total_students %}
+          <tr>
+            <td>{{ student.roll_no }}</td>
+            <td>{{ student.name }}</td>
+            <td>{{ student.guardian_no }}</td>
+            <td>{{ student.email }}</td>
+            <td>{{ student.guardian_email }}</td>
+            <td>
+              <button onclick="viewStudentHistory({{ student.id }}, '{{ student.name }}')">
+                📊 View History
+              </button>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6">No students found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ✅ Modal goes here (still inside the section but below the card) -->
+  <div id="historyModal" style="display:none; position:fixed; top:0; left:0; 
+       width:100%; height:100%; background:rgba(0,0,0,0.5); 
+       align-items:center; justify-content:center;">
+    <div style="background:#fff; padding:20px; border-radius:10px; width:550px; max-width:95%;">
+      <h3 id="studentHistoryTitle"></h3>
+      
+      <!-- Month Picker -->
+      <label for="historyMonth">Select Month:</label>
+      <input type="month" id="historyMonth" />
+
+      <!-- Pie Chart -->
+      <canvas id="studentPieChart" width="400" height="300" style="margin-top:20px;"></canvas>
+
+      <!-- Counts Summary -->
+      <div id="historyCounts" style="margin-top:15px; font-weight:bold;"></div>
+
+      <!-- Close Button -->
+      <button onclick="closeHistoryModal()" 
+        style="margin-top:15px; background:#dc3545; color:white; border:none; padding:8px 12px; border-radius:5px;">
+        Close
+      </button>
+    </div>
+  </div>
+</section>
+
       </main>
     </div>
 
@@ -782,6 +813,68 @@ datePicker.addEventListener("change", (e) => {
 // Don’t auto-load attendance on page reload
 // Default visible section will be the dashboard or first one in HTML
 // Attendance will load only when user clicks "View Attendance"
+
+
+// Total Students piechart
+let studentChart = null;
+let currentStudentId = null; // keep track of selected student
+
+function viewStudentHistory(studentId, studentName) {
+  currentStudentId = studentId; // save for month picker
+  document.getElementById("historyModal").style.display = "flex";
+  document.getElementById("studentHistoryTitle").textContent = 
+    "Attendance History for " + studentName;
+
+  // Default month = current month
+  const monthInput = document.getElementById("historyMonth");
+  const now = new Date();
+  const monthStr = now.toISOString().slice(0,7); // YYYY-MM
+  monthInput.value = monthStr;
+
+  // Load data for current month
+  loadStudentHistory(studentId, now.getFullYear(), now.getMonth() + 1);
+
+  // Add event listener for month change
+  monthInput.onchange = () => {
+    const [year, month] = monthInput.value.split("-");
+    loadStudentHistory(studentId, year, month);
+  };
+}
+
+function loadStudentHistory(studentId, year, month) {
+  fetch(`/student-history/${studentId}/${year}/${month}`)
+    .then(res => res.json())
+    .then(data => {
+      const ctx = document.getElementById("studentPieChart").getContext("2d");
+
+      // Destroy old chart
+      if (studentChart) studentChart.destroy();
+
+      studentChart = new Chart(ctx, {
+        type: "pie",
+        data: {
+          labels: ["Present", "Absent"],
+          datasets: [{
+            data: [data.Present, data.Absent],
+            backgroundColor: ["#28a745", "#dc3545"],
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: "bottom" } }
+        }
+      });
+
+      // Show counts in text form
+      document.getElementById("historyCounts").innerHTML = 
+        `✅ Present: ${data.Present} days<br>❌ Absent: ${data.Absent} days`;
+    })
+    .catch(err => console.error("Error loading history:", err));
+}
+
+function closeHistoryModal() {
+  document.getElementById("historyModal").style.display = "none";
+}
 </script>
 
   </body>

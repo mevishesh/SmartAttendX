@@ -590,6 +590,35 @@ def get_attendance(date):
     conn.close()
     return jsonify(rows)
 
+#total students
+
+@app.route("/student-history/<int:student_id>/<year>/<month>")
+def student_history_month(student_id, year, month):
+    if not is_logged_in():
+        return redirect(url_for("login_page"))
+
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+
+    # Get attendance counts for that month
+    c.execute("""
+        SELECT status, COUNT(*) as count
+        FROM attendance
+        WHERE student_id = ? AND admin_id = ?
+          AND strftime('%Y', date) = ? 
+          AND strftime('%m', date) = ?
+        GROUP BY status
+    """, (student_id, session["admin_id"], str(year), str(month).zfill(2)))
+
+    data = {"Present": 0, "Absent": 0}
+    for row in c.fetchall():
+        data[row["status"]] = row["count"]
+
+    conn.close()
+    return jsonify(data)
+
+
 
 # ---------------- Main ----------------
 if __name__ == "__main__":
