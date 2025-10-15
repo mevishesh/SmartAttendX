@@ -6,403 +6,167 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <!-- 🎨 CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
     <style>
+      /* 🌐 General */
+      :root {
+        --bg: #f5f7fb;
+        --fg: #333;
+        --card-bg: #fff;
+        --card-border: #e5e7eb;
+        --muted: #6b7280;
+        --primary: #3b82f6;
+        --primary-hover: #2563eb;
+        --danger: #dc2626;
+        --danger-hover: #b91c1c;
+        --secondary: #6b7280;
+        --secondary-hover: #4b5563;
+      }
+      * { box-sizing: border-box; }
       body {
         margin: 0;
-        font-family: Arial, sans-serif;
-        min-height: 100vh;
-        background: linear-gradient(120deg, #f8fafc 0%, #e3e9f7 100%);
-        /* Remove display:flex and height:100vh to allow normal page flow */
+        font-family: "Inter", "Segoe UI", Arial, sans-serif;
+        background: var(--bg);
+        color: var(--fg);
       }
-      .dashboard-container {
-        display: flex;
-        min-height: 100vh;
-        align-items: stretch;
-      }
-      /* Sidebar */
+
+      /* 🖼 Layout */
+      .dashboard-container { display: flex; min-height: 100vh; }
+
+      /* 📌 Sidebar */
       .sidebar {
-        width: 250px;
-        background: #2c3e50;
+        width: 240px;
+        background: #1f2937;
         color: #fff;
         display: flex;
         flex-direction: column;
-        padding: 1rem;
-        min-height: 100vh;
-        box-shadow: 2px 0 16px rgba(44,62,80,0.07);
-        position: sticky;
-        top: 0;
+        padding: 1.5rem 1rem;
       }
-      .profile {
-        text-align: center;
-        margin-bottom: 2rem;
-      }
-      .profile a {
-        color: inherit;
-        text-decoration: none;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 0.5rem;
-      }
-      /* 🔥 Shared profile picture style */
-      .profile-pic {
-        border-radius: 50%;
-        object-fit: cover;
-        border: 2px solid #fff;
-      }
-      /* Sidebar profile picture */
+      .sidebar .profile { text-align: center; margin-bottom: 2rem; }
       .sidebar .profile-pic {
-        width: 80px;
-        height: 80px;
+        width: 70px; height: 70px; border-radius: 50%;
+        border: 3px solid var(--primary); margin-bottom: 0.5rem;
+        object-fit: cover;
       }
+      .sidebar .profile span { font-weight: 600; font-size: 0.95rem; display: inline-block; }
       .sidebar a.menu-link {
-        display: block;
-        padding: 0.8rem;
-        margin: 0.3rem 0;
-        text-decoration: none;
-        color: #fff;
-        background: #34495e;
-        border-radius: 5px;
-        transition: background 0.3s;
+        display: flex; align-items: center;
+        padding: 0.75rem 1rem; margin: 0.25rem 0;
+        color: #d1d5db; text-decoration: none;
+        border-radius: 6px; font-size: 0.95rem;
+        transition: background 0.2s, color 0.2s;
       }
-      .sidebar a.menu-link:hover {
-        background: #1abc9c;
+      .sidebar a.menu-link:hover { background: #374151; color: #fff; }
+
+      /* 📄 Main content */
+      .content { flex-grow: 1; padding: 2rem; }
+
+      /* 🧾 Cards */
+      .card {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 10px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
       }
-      /* Main content */
-      .content {
-        flex-grow: 1;
-        padding: 2.5rem 3vw;
-        /* Remove overflow-y:auto */
-        background: transparent;
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-        gap: 2rem;
-      }
-      .hidden {
-        display: none;
-      }
-      button {
-        background: #007bff;
-        color: white;
-        border: none;
-        padding: 0.6rem 1.2rem;
-        border-radius: 5px;
-        cursor: pointer;
-      }
-      button:hover {
-        background: #0056b3;
-      }
-      /* Table */
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 1rem;
-      }
-      table,
-      th,
-      td {
-        border: 1px solid #ddd;
-      }
-      th,
-      td {
-        padding: 0.8rem;
-        text-align: left;
-      }
-      th {
-        background: #007bff;
-        color: white;
-      }
-      /* Register Student Card */
-      #registerStudent .register-card {
-        max-width: 420px;
-        margin: 2rem auto;
-        background: #f9f9f9;
-        border-radius: 16px;
-        box-shadow: 0 4px 24px rgba(44,62,80,0.10);
-        padding: 2.5rem 2rem 2rem 2rem;
-        transition: box-shadow 0.2s;
-      }
-      #registerStudent .register-card:hover {
-        box-shadow: 0 8px 32px rgba(44,62,80,0.18);
-      }
-      #registerStudent h2 {
-        text-align: center;
-        color: #007bff;
-        margin-bottom: 1.5rem;
-        letter-spacing: 1px;
-        font-weight: 700;
-      }
-      #registerStudent form {
-        display: flex;
-        flex-direction: column;
-        gap: 1.1rem;
-      }
-      #registerStudent label {
-        font-weight: 600;
-        color: #34495e;
-        margin-bottom: 0.2rem;
-        display: block;
-        letter-spacing: 0.5px;
-      }
-      #registerStudent input[type="text"],
-      #registerStudent input[type="number"],
-      #registerStudent input[type="email"] {
-        width: 100%;
-        padding: 0.75rem;
-        border-radius: 7px;
-        border: 1.5px solid #d1d5db;
-        margin-top: 0.2rem;
-        font-size: 1rem;
-        background: #fff;
-        transition: border 0.2s;
-      }
-      #registerStudent input:focus {
-        border: 1.5px solid #007bff;
-        outline: none;
-        background: #f0f8ff;
-      }
-      #registerStudent button[type="submit"] {
-        margin-top: 1rem;
-        background: linear-gradient(90deg, #007bff 60%, #0056b3 100%);
-        color: white;
-        font-weight: 700;
-        font-size: 1.08rem;
-        padding: 0.9rem;
-        border-radius: 7px;
-        border: none;
-        cursor: pointer;
-        box-shadow: 0 2px 8px rgba(0,123,255,0.08);
-        transition: background 0.2s, box-shadow 0.2s;
-        letter-spacing: 0.5px;
-      }
-      #registerStudent button[type="submit"]:hover {
-        background: linear-gradient(90deg, #0056b3 60%, #007bff 100%);
-        box-shadow: 0 4px 16px rgba(0,123,255,0.13);
+      .card h2 {
+        margin: 0 0 1rem 0; font-size: 1.3rem; font-weight: 600; color: #1f2937;
       }
 
-      /* Notify Card */
-      #notify .notify-card {
-        max-width: 480px;
-        margin: 2rem auto;
-        background: #f9f9f9;
-        border-radius: 16px;
-        box-shadow: 0 4px 24px rgba(44,62,80,0.10);
-        padding: 2.2rem 2rem 2rem 2rem;
-        transition: box-shadow 0.2s;
-        position: relative;
+      /* 📝 Forms */
+      form label { font-weight: 600; margin-bottom: 0.25rem; display: block; }
+      form input, form select, form textarea {
+        width: 100%; padding: 0.65rem 0.75rem; border-radius: 6px;
+        border: 1px solid #d1d5db; font-size: 0.95rem;
+        transition: border 0.2s, box-shadow 0.2s;
       }
-      #notify .notify-card:hover {
-        box-shadow: 0 8px 32px rgba(44,62,80,0.18);
-      }
-      #notify h2 {
-        text-align: center;
-        color: #007bff;
-        margin-bottom: 1.2rem;
-        letter-spacing: 1px;
-        font-weight: 700;
-      }
-      #notify .stats-row {
-        display: flex;
-        justify-content: center;
-        gap: 2rem;
-        margin-bottom: 1.2rem;
-      }
-      #notify .stat-pill {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        background: #e3e9f7;
-        color: #222;
-        border-radius: 20px;
-        padding: 0.5rem 1.2rem;
-        font-weight: 600;
-        font-size: 1rem;
-        box-shadow: 0 1px 4px rgba(44,62,80,0.07);
-      }
-      #notify .stat-pill.present {
-        background: #d4f8e8;
-        color: #28a745;
-      }
-      #notify .stat-pill.absent {
-        background: #ffe3e3;
-        color: #dc3545;
-      }
-      #notify form {
-        display: flex;
-        flex-direction: column;
-        gap: 1.1rem;
-        margin-top: 0.5rem;
-      }
-      #notify label {
-        font-weight: 600;
-        color: #34495e;
-        margin-bottom: 0.2rem;
-        display: block;
-        letter-spacing: 0.5px;
-      }
-      #notify select, #notify textarea {
-        width: 100%;
-        padding: 0.7rem;
-        border-radius: 7px;
-        border: 1.5px solid #d1d5db;
-        font-size: 1rem;
-        background: #fff;
-        transition: border 0.2s;
-        margin-top: 0.2rem;
-      }
-      #notify select:focus, #notify textarea:focus {
-        border: 1.5px solid #007bff;
-        outline: none;
-        background: #f0f8ff;
-      }
-      #notify textarea {
-        min-height: 90px;
-        resize: vertical;
-      }
-      #notify button[type="submit"] {
-        margin-top: 0.5rem;
-        background: linear-gradient(90deg, #007bff 60%, #0056b3 100%);
-        color: white;
-        font-weight: 700;
-        font-size: 1.08rem;
-        padding: 0.9rem;
-        border-radius: 7px;
-        border: none;
-        cursor: pointer;
-        box-shadow: 0 2px 8px rgba(0,123,255,0.08);
-        transition: background 0.2s, box-shadow 0.2s;
-        letter-spacing: 0.5px;
-      }
-      #notify button[type="submit"]:hover {
-        background: linear-gradient(90deg, #0056b3 60%, #007bff 100%);
-        box-shadow: 0 4px 16px rgba(0,123,255,0.13);
-      }
-      /* Responsive */
-      @media (max-width: 600px) {
-        #registerStudent .register-card {
-          padding: 1.2rem 0.5rem 1.5rem 0.5rem;
-        }
-        #notify .notify-card {
-          padding: 1.2rem 0.5rem 1.5rem 0.5rem;
-        }
-        #notify .stats-row {
-          flex-direction: column;
-          gap: 0.7rem;
-          align-items: center;
-        }
+      form input:focus, form select:focus, form textarea:focus {
+        border-color: var(--primary); outline: none;
+        box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
       }
 
-      /* Dark Theme for Register Student */
-      body.dark #registerStudent .register-card {
-        background: #23272f;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+      /* 🔘 Buttons */
+      button, .cta-button {
+        background: var(--primary); color: #fff; border: none;
+        padding: 0.6rem 1.2rem; border-radius: 6px; font-weight: 600;
+        cursor: pointer; font-size: 0.95rem; transition: background 0.2s;
       }
-      body.dark #registerStudent label {
-        color: #e0e6ed;
-      }
-      body.dark #registerStudent input {
-        background: #181b20;
-        color: #f4f4f4;
-        border: 1.5px solid #444;
-      }
-      body.dark #registerStudent input:focus {
-        background: #23272f;
-        border: 1.5px solid #007bff;
-      }
-      /* Dark Theme for Notify */
-      body.dark #notify .notify-card {
-        background: #23272f;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.25);
-      }
-      body.dark #notify label {
-        color: #e0e6ed;
-      }
-      body.dark #notify select,
-      body.dark #notify textarea {
-        background: #181b20;
-        color: #f4f4f4;
-        border: 1.5px solid #444;
-      }
-      body.dark #notify select:focus,
-      body.dark #notify textarea:focus {
-        background: #23272f;
-        border: 1.5px solid #007bff;
-      }
-      body.dark #notify .stat-pill {
-        background: #23272f;
-        color: #f4f4f4;
-      }
-      body.dark #notify .stat-pill.present {
-        background: #1e3a2f;
-        color: #28a745;
-      }
-      body.dark #notify .stat-pill.absent {
-        background: #3a2323;
-        color: #dc3545;
-      }
-      /* Dark Theme */
-      body.dark {
-        background: #1e1e1e;
-        color: #f4f4f4;
-      }
-      body.dark .sidebar {
-        background: #111;
-      }
-      body.dark .sidebar a.menu-link {
-        background: #222;
-      }
-      body.dark th {
-        background: #444;
-      }
+      button:hover, .cta-button:hover { background: var(--primary-hover); }
+      button.danger { background: var(--danger); }
+      button.danger:hover { background: var(--danger-hover); }
+      button.secondary { background: var(--secondary); }
+      button.secondary:hover { background: var(--secondary-hover); }
 
+      /* 📊 Tables */
+      table { width: 100%; border-collapse: collapse; margin-top: 1rem; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
+      th, td { padding: 0.75rem; text-align: left; font-size: 0.9rem; }
+      th { background: #f3f4f6; font-weight: 600; }
+      tr:nth-child(even) td { background: #fafafa; }
+      tr:hover td { background: #f0f9ff; }
+
+      /* ✅ Status Labels */
+      .status-present { color: #16a34a; font-weight: 600; }
+      .status-absent { color: #dc2626; font-weight: 600; }
+
+      /* 📅 Date filters */
       .date-filter {
-        margin-top: 1.2rem;
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        flex-wrap: wrap;
+        margin: 1rem 0; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
       }
-      .date-filter label {
-        font-weight: 600;
+
+      /* 👁 Hidden Sections */
+      .hidden { display: none !important; opacity: 0; visibility: hidden; transition: opacity 0.25s ease, visibility 0.25s ease; }
+
+      /* Optional smooth fade-in animation when showing a section */
+      main section { opacity: 1; visibility: visible; transition: opacity 0.25s ease, visibility 0.25s ease; }
+
+      /* 🌙 Dark Mode */
+      body.dark { background: #111827; color: #f9fafb; }
+      body.dark .card { background: #1f2937; border-color: #374151; color: #f9fafb; }
+      body.dark table, body.dark th, body.dark td { border-color: #374151; }
+      body.dark th { background: #374151; }
+      body.dark tr:nth-child(even) td { background: #1f2937; }
+      body.dark tr:hover td { background: #374151; }
+      body.dark input, body.dark select, body.dark textarea { background: #111827; border: 1px solid #374151; color: #f9fafb; }
+      body.dark .sidebar { background: #0f172a; }
+      body.dark .sidebar a.menu-link { color: #9ca3af; }
+      body.dark .sidebar a.menu-link:hover { background: #1e293b; color: #fff; }
+
+      /* 🪟 Modal Base */
+      .modal-backdrop {
+        display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+        align-items: center; justify-content: center; z-index: 1000;
       }
-      .date-filter input[type="date"] {
-        padding: 0.4rem 0.6rem;
-        border-radius: 6px;
-        border: 1px solid #ccc;
+      .modal-backdrop.show { display: flex; }
+      .modal {
+        background: #fff; padding: 28px; border-radius: 16px;
+        width: 520px; max-width: 95%;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
       }
-      .date-filter button {
-        padding: 0.5rem 1rem;
-        border-radius: 5px;
-        background: #007bff;
-        color: white;
-        border: none;
-        cursor: pointer;
-        transition: background 0.2s;
+      .modal-header {
+        display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;
       }
-      .date-filter button:hover {
-        background: #0056b3;
+      .modal-close {
+        background: transparent; border: none; font-size: 24px; color: #6b7280; cursor: pointer;
+        padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+        border-radius: 6px; transition: all 0.2s;
       }
-      .status-present { color: #28a745; font-weight: 600; }
-      .status-absent { color: #dc3545; font-weight: 600; }
+      .modal-close:hover { background: #f3f4f6; }
     </style>
 
-    <!-- 📦 Chart.js -->
+    <!-- 📦 Chart.js (only needed for student history pie) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
   <body>
     <div class="dashboard-container">
       <aside class="sidebar">
         <div class="profile">
-          <a href="{{ url_for('profile') }}">
+          <a href="{{ url_for('profile') }}" style="color:inherit; text-decoration:none;">
             <img
               src="{{ url_for('static', filename=admin.profile_pic if admin.profile_pic else 'images/default.png') }}"
               alt="Profile Picture"
               class="profile-pic"
             />
-            <span>{{ admin['name'] }}</span>
           </a>
+          <span>{{ admin['name'] }}</span>
         </div>
         <nav class="sidebar-menu">
           <a href="#" onclick="showSection('startAttendance')" class="menu-link">📋 Start Attendance</a>
@@ -410,37 +174,37 @@
           <a href="#" onclick="showSection('totalStudents')" class="menu-link">👥 Total Students</a>
           <a href="#" onclick="showSection('registerStudent')" class="menu-link">➕ Register Student</a>
           <a href="#" onclick="showSection('notify')" class="menu-link">📢 Notify</a>
-         
           <a href="#" onclick="showSection('settings')" class="menu-link">⚙ Settings</a>
           <a href="{{ url_for('logout') }}" class="menu-link">🚪 Logout</a>
         </nav>
       </aside>
+
       <main class="content">
+        <!-- ▶ Start Attendance -->
         <section id="startAttendance">
           <div class="card">
             <h2>Start Attendance</h2>
             <form id="attendanceForm" action="/start-attendance" method="POST">
-              <p>
-                Run the face recognizer to automatically mark student attendance.
-              </p>
+              <p>Run the face recognizer to automatically mark student attendance.</p>
               <button type="submit" id="startAttendanceBtn">▶ Run Face Recognizer</button>
-              <button type="button" id="stopAttendanceBtn" style="margin-left:1em;">■ Stop Attendance</button>
+              <button type="button" id="stopAttendanceBtn" class="secondary" style="margin-left:1em;">■ Stop Attendance</button>
             </form>
             <div id="attendanceWindow" style="margin-top:2rem; min-height:300px; background:#f4f8ff; border-radius:10px; box-shadow:0 2px 8px #e3e9f7; padding:2rem;">
-              <!-- Camera feed will appear here -->
+              <!-- Camera feed / status will appear here -->
             </div>
           </div>
         </section>
 
-         <section id="viewAttendance" class="hidden">
+        <!-- 👁 View Attendance -->
+        <section id="viewAttendance" class="hidden" aria-hidden="true">
           <div class="card">
             <h2>View Attendance</h2>
 
             <div class="date-filter">
-              <label>Select Date:</label>
+              <label for="attendanceDate">Select Date:</label>
               <input type="date" id="attendanceDate" />
-              <button id="todayBtn">Today</button>
-              <button id="yesterdayBtn">Yesterday</button>
+              <button id="todayBtn" type="button">Today</button>
+              <button id="yesterdayBtn" type="button">Yesterday</button>
             </div>
 
             <div style="margin-top: 1rem;">
@@ -448,7 +212,7 @@
               <p>Total Students: <strong id="totalStudentsCount">{{ total_students|length }}</strong></p>
             </div>
 
-            <table id="attendanceTable" style="margin-top: 1rem; width: 100%; border-collapse: collapse;">
+            <table id="attendanceTable">
               <thead>
                 <tr>
                   <th>Roll No</th>
@@ -463,80 +227,43 @@
           </div>
         </section>
 
-
-        <section id="registerStudent" class="hidden">
+        <!-- ➕ Register Student -->
+        <section id="registerStudent" class="hidden" aria-hidden="true">
           <div class="card form-card">
             <h2>Register New Student</h2>
             <form action="/register-student" method="POST">
               <div class="form-group">
                 <label for="student_id">Student ID</label>
-                <input
-                  type="number"
-                  id="student_id"
-                  name="student_id"
-                  placeholder="e.g. 1001"
-                  required
-                />
+                <input type="number" id="student_id" name="student_id" placeholder="e.g. 1001" required />
               </div>
               <div class="form-group">
                 <label for="name">Full Name</label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  placeholder="e.g. Jane Doe"
-                  required
-                />
+                <input type="text" id="name" name="name" placeholder="e.g. Jane Doe" required />
               </div>
               <div class="form-group">
                 <label for="email">Student Email</label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  placeholder="e.g. jane@email.com"
-                  required
-                />
+                <input type="email" id="email" name="email" placeholder="e.g. jane@email.com" required />
               </div>
               <div class="form-group">
                 <label for="roll_no">Roll No</label>
-                <input
-                  type="number"
-                  id="roll_no"
-                  name="roll_no"
-                  placeholder="e.g. 12"
-                  required
-                />
+                <input type="number" id="roll_no" name="roll_no" placeholder="e.g. 12" required />
               </div>
               <div class="form-group">
                 <label for="guardian_no">Guardian Contact No</label>
-                <input
-                  type="number"
-                  id="guardian_no"
-                  name="guardian_no"
-                  placeholder="e.g. 9876543210"
-                  required
-                />
+                <input type="number" id="guardian_no" name="guardian_no" placeholder="e.g. 9876543210" required />
               </div>
               <div class="form-group">
                 <label for="guardian_email">Guardian Email</label>
-                <input
-                  type="email"
-                  id="guardian_email"
-                  name="guardian_email"
-                  placeholder="e.g. parent@email.com"
-                  required
-                />
+                <input type="email" id="guardian_email" name="guardian_email" placeholder="e.g. parent@email.com" required />
               </div>
-              <button type="submit" class="cta-button">
-                ➕ Register Student
-              </button>
+              <button type="submit" class="cta-button">➕ Register Student</button>
             </form>
           </div>
         </section>
 
-        <section id="notify" class="hidden">
-          <div>
+        <!-- 📢 Notify -->
+        <section id="notify" class="hidden" aria-hidden="true">
+          <div class="card">
             <h2>Notify Students</h2>
             <form action="/notify" method="POST">
               <div style="margin-bottom: 1em;">
@@ -548,7 +275,7 @@
                 </select>
               </div>
               <div style="margin-bottom: 1em;">
-                <label for="message">Message:</label><br>
+                <label for="message">Message:</label><br />
                 <textarea name="message" id="message" rows="4" style="width:100%;" required></textarea>
               </div>
               <button type="submit">Send Notification</button>
@@ -556,326 +283,382 @@
           </div>
         </section>
 
-        <section id="settings" class="hidden">
-          <div class="card">
-            <h2>Settings</h2>
-            <form action="/reset-data" method="POST" onsubmit="return confirm('Are you sure you want to reset? This action cannot be undone!');">
-              <label for="reset_choice">Reset Options:</label>
-              <select name="reset_choice" id="reset_choice" required>
-                <option value="1">Clear only attendance history</option>
-                <option value="2">Clear all students but keep admins</option>
-                <option value="3">Clear all admins (and everything)</option>
-                <option value="4">Clear trained faces folder</option>
-                <option value="5">Clear EVERYTHING (database + faces)</option>
-              </select>
-              <br><br>
-              <button type="submit">Reset</button>
-            </form>
-            <p style="color: #dc3545; margin-top: 1em;">Warning: Reset actions cannot be undone!</p>
+        <!-- ⚙ Settings -->
+        <section id="settings" class="hidden" aria-hidden="true">
+          <div class="card" style="max-width: 600px; margin: auto; padding: 2rem; border-radius: 16px; background: #f9f9f9; box-shadow: 0 4px 24px rgba(0,0,0,0.1);">
+            <h2 style="text-align:center; color:#007bff; margin-bottom:1.5rem;">⚙ Settings</h2>
+
+            <!-- Reset Data Card -->
+            <div style="margin-bottom: 2rem; padding:1.5rem; border:1px solid #ddd; border-radius:12px; background:#fff;">
+              <h3 style="color:#dc3545; margin-bottom:1rem;">🗑 Reset Data</h3>
+              <form action="/reset-data" method="POST" onsubmit="return confirm('⚠ Are you sure you want to reset? This action cannot be undone!');">
+                <label for="reset_choice" style="font-weight:bold; display:block; margin-bottom:0.5rem;">Select Reset Option:</label>
+                <select name="reset_choice" id="reset_choice" required style="width:100%; padding:0.7rem; border:1px solid #ccc; border-radius:8px; margin-bottom:1rem;">
+                  <option value="1">📄 Clear only attendance history</option>
+                  <option value="2">👥 Clear all students but keep admins</option>
+                  <option value="3">🔑 Clear all admins (and everything)</option>
+                  <option value="4">🖼 Clear trained faces folder</option>
+                  <option value="5">💣 Clear EVERYTHING (database + faces)</option>
+                </select>
+
+                <button type="submit" style="width:100%; padding:0.9rem; background:linear-gradient(90deg,#dc3545,#b02a37); color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">
+                  🚨 Reset
+                </button>
+              </form>
+              <p style="color: #dc3545; margin-top: 1rem; font-size:0.9rem; text-align:center;">Warning: Reset actions cannot be undone!</p>
+            </div>
+
+            <!-- Theme Toggle Card -->
+            <div style="padding:1.5rem; border:1px solid #ddd; border-radius:12px; background:#fff; text-align:center;">
+              <h3 style="margin-bottom:1rem;">🎨 Theme</h3>
+              <a href="#" onclick="toggleTheme()" style="display:inline-block; padding:0.8rem 1.2rem; background:linear-gradient(90deg,#007bff,#0056b3); color:white; font-weight:bold; border-radius:8px; text-decoration:none;">
+                🌙 Toggle Dark / Light Theme
+              </a>
+            </div>
           </div>
-           <div>
-            <a href="#" onclick="toggleTheme()" class="menu-link" style="background-color:#34495e,  ;">🌙 Toggle Theme</a>
-           </div>
         </section>
 
-        <section id="totalStudents" class="hidden">
-  <div class="card">
-    <h2>Total Students</h2>
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Roll</th>
-            <th>Name</th>
-            <th>Guardian No</th>
-            <th>Email</th>
-            <th>Guardian Email</th>
-            <th>Actions</th> <!-- ✅ New Column -->
-          </tr>
-        </thead>
-        <tbody>
-          {% for student in total_students %}
-          <tr>
-            <td>{{ student.roll_no }}</td>
-            <td>{{ student.name }}</td>
-            <td>{{ student.guardian_no }}</td>
-            <td>{{ student.email }}</td>
-            <td>{{ student.guardian_email }}</td>
-            <td>
-              <button onclick="viewStudentHistory({{ student.id }}, '{{ student.name }}')">
-                📊 View History
-              </button>
-            </td>
-          </tr>
-          {% else %}
-          <tr>
-            <td colspan="6">No students found.</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
+        <!-- 👥 Total Students -->
+        <section id="totalStudents" class="hidden" aria-hidden="true">
+          <div class="card">
+            <h2>Total Students</h2>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Roll</th>
+                    <th>Name</th>
+                    <th>Guardian No</th>
+                    <th>Email</th>
+                    <th>Guardian Email</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for student in total_students %}
+                  <tr>
+                    <td>{{ student.roll_no }}</td>
+                    <td>{{ student.name }}</td>
+                    <td>{{ student.guardian_no }}</td>
+                    <td>{{ student.email }}</td>
+                    <td>{{ student.guardian_email }}</td>
+                    <td>
+                      <button type="button" onclick="viewStudentHistory({{ student.id }}, '{{ student.name }}')">View History</button>
+                      <button type="button" onclick="confirmDeleteStudent({{ student.id }}, '{{ student.name }}')" class="danger" style="padding:6px 10px; border-radius:6px; font-size:13px;">Delete</button>
+                    </td>
+                  </tr>
+                  {% else %}
+                  <tr><td colspan="6">No students found.</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
 
-  <!-- ✅ Modal goes here (still inside the section but below the card) -->
-  <div id="historyModal" style="display:none; position:fixed; top:0; left:0; 
-       width:100%; height:100%; background:rgba(0,0,0,0.5); 
-       align-items:center; justify-content:center;">
-    <div style="background:#fff; padding:20px; border-radius:10px; width:550px; max-width:95%;">
-      <h3 id="studentHistoryTitle"></h3>
-      
-      <!-- Month Picker -->
-      <label for="historyMonth">Select Month:</label>
-      <input type="month" id="historyMonth" />
+          <!-- 🗑 Delete Confirmation Modal -->
+          <div id="deleteModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="deleteTitle">
+            <div class="modal" style="width:400px;">
+              <div class="modal-header">
+                <h3 id="deleteTitle" style="margin:0; color:#1f2937;">Delete Student</h3>
+                <button class="modal-close" onclick="closeDeleteModal()" aria-label="Close">✕</button>
+              </div>
+              <p id="deleteConfirmText" style="color:#6b7280; margin:16px 0;"></p>
+              <div style="display:flex; justify-content:center; gap:1rem; margin-top:20px;">
+                <button id="confirmDeleteBtn" class="danger" style="padding:10px 18px; border-radius:8px;">Yes, Delete</button>
+                <button class="secondary" onclick="closeDeleteModal()" style="padding:10px 18px; border-radius:8px;">Cancel</button>
+              </div>
+            </div>
+          </div>
 
-      <!-- Pie Chart -->
-      <canvas id="studentPieChart" width="400" height="300" style="margin-top:20px;"></canvas>
+          <!-- 📈 Student History Modal -->
+          <div id="historyModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="studentHistoryTitle">
+            <div class="modal">
+              <div class="modal-header">
+                <h3 id="studentHistoryTitle" style="margin:0; font-size:18px; color:#1f2937;"></h3>
+                <button class="modal-close" onclick="closeHistoryModal()" aria-label="Close">✕</button>
+              </div>
 
-      <!-- Counts Summary -->
-      <div id="historyCounts" style="margin-top:15px; font-weight:bold;"></div>
+              <!-- Month Picker -->
+              <div style="margin-bottom:20px;">
+                <label for="historyMonth" style="display:block; font-size:13px; font-weight:600; color:#6b7280; margin-bottom:6px;">SELECT MONTH</label>
+                <input type="month" id="historyMonth" style="width:100%; padding:10px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:14px;" />
+              </div>
 
-      <!-- Close Button -->
-      <button onclick="closeHistoryModal()" 
-        style="margin-top:15px; background:#dc3545; color:white; border:none; padding:8px 12px; border-radius:5px;">
-        Close
-      </button>
-    </div>
-  </div>
-</section>
+              <!-- Chart Container -->
+              <div style="background:#f9fafb; padding:20px; border-radius:12px; margin-bottom:16px;">
+                <canvas id="studentPieChart" style="max-width:280px; max-height:280px; margin:0 auto; display:block;"></canvas>
+              </div>
 
+              <!-- Counts Summary -->
+              <div id="historyCounts"></div>
+            </div>
+          </div>
+        </section>
       </main>
     </div>
 
-   <script>
-/* ──────────────────────────────────────────────
-   🔹 1. Section Navigation
-   ────────────────────────────────────────────── */
-function showSection(sectionId) {
-  // Hide all sections first
-  document.querySelectorAll("main section").forEach((sec) => sec.classList.add("hidden"));
-  // Show only the selected section
-  const target = document.getElementById(sectionId);
-  target.classList.remove("hidden");
+    <script>
+      /* ──────────────────────────────────────────────
+         0. Utilities / Globals
+         ────────────────────────────────────────────── */
+      let currentStream = null;    // for future camera integration
+      let studentChart = null;     // Chart.js instance
+      let currentStudentId = null; // selected student for history
 
-  // ✅ Load today's attendance only when "View Attendance" tab is opened
-  if (sectionId === "viewAttendance") {
-    const today = new Date().toISOString().split("T")[0];
-    document.getElementById("attendanceDate").value = today;
-    document.getElementById("selectedDateText").textContent = today;
-    loadAttendanceByDate(today);
-  }
-}
+      function qs(id) { return document.getElementById(id); }
+      function show(el) { el.classList.add('show'); }
+      function hide(el) { el.classList.remove('show'); }
 
-/* ──────────────────────────────────────────────
-   🔹 2. Theme Toggle (Dark/Light Mode)
-   ────────────────────────────────────────────── */
-function toggleTheme() {
-  document.body.classList.toggle("dark");
-}
+      /* ──────────────────────────────────────────────
+         1. Section Navigation
+         ────────────────────────────────────────────── */
+      function showSection(sectionId) {
+        document.querySelectorAll("main section").forEach((sec) => {
+          sec.classList.add("hidden");
+          sec.setAttribute("aria-hidden", "true");
+        });
+        const target = qs(sectionId);
+        if (!target) return;
+        target.classList.remove("hidden");
+        target.setAttribute("aria-hidden", "false");
 
-/* ──────────────────────────────────────────────
-   🔹 3. Attendance Chart (Bar Chart for Today)
-   ────────────────────────────────────────────── */
-const barCtx = document.getElementById("attendanceBarChart");
-if (barCtx) {
-  new Chart(barCtx, {
-    type: "bar",
-    data: {
-      labels: ["Present", "Absent"],
-      datasets: [
-        {
-          label: "Number of Students",
-          data: [
-            {{ present_count|default(0) }},
-            {{ absent_count|default(0) }},
-          ],
-          backgroundColor: ["#28a745", "#dc3545"],
-          borderRadius: 8,
-          maxBarThickness: 60,
-        },
-      ],
-    },
-    options: {
-      responsive: false,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-      },
-      scales: {
-        x: {
-          grid: { display: false },
-          ticks: { font: { size: 16, weight: "bold" } },
-        },
-        y: {
-          beginAtZero: true,
-          grid: { color: "rgba(0,0,0,0.05)" },
-          ticks: { stepSize: 1, font: { size: 14 } },
-          suggestedMax: {{ present_count + absent_count if present_count + absent_count > 0 else 10 }},
-        },
-      },
-    },
-  });
-}
+        // Load today's attendance only when "View Attendance" tab is opened
+        if (sectionId === "viewAttendance") {
+          const today = new Date().toISOString().split("T")[0];
+          const dateInput = qs("attendanceDate");
+          if (dateInput) dateInput.value = today;
+          const selectedDateText = qs("selectedDateText");
+          if (selectedDateText) selectedDateText.textContent = today;
+          loadAttendanceByDate(today);
+        }
+      }
 
-/* ──────────────────────────────────────────────
-   🔹 4. Start/Stop Attendance Buttons
-   ────────────────────────────────────────────── */
-document.getElementById("attendanceForm").addEventListener("submit", function(e) {
-  // Display message when recognizer starts
-  const win = document.getElementById("attendanceWindow");
-  win.style.display = "block";
-  win.innerHTML = "<h3>Attendance is being marked...</h3><p>The face recognizer is running. Please wait for completion.</p>";
-});
+      /* ──────────────────────────────────────────────
+         2. Theme Toggle (Dark/Light Mode)
+         ────────────────────────────────────────────── */
+      function toggleTheme() {
+        document.body.classList.toggle("dark");
+      }
 
-document.getElementById("startAttendanceBtn").onclick = function() {
-  // Placeholder for potential future live camera integration
-  console.log("Attendance started");
-};
+      /* ──────────────────────────────────────────────
+         3. Start/Stop Attendance Buttons
+         ────────────────────────────────────────────── */
+      const attendanceForm = qs("attendanceForm");
+      const startBtn = qs("startAttendanceBtn");
+      const stopBtn = qs("stopAttendanceBtn");
+      const attendanceWindow = qs("attendanceWindow");
 
-document.getElementById("stopAttendanceBtn").onclick = function() {
-  // Stop any running camera stream (if used in future)
-  const win = document.getElementById("attendanceWindow");
-  if (typeof currentStream !== "undefined" && currentStream) {
-    currentStream.getTracks().forEach(track => track.stop());
-    currentStream = null;
-  }
-  win.innerHTML = "<p>Attendance stopped.</p>";
-};
+      if (attendanceForm && attendanceWindow) {
+        attendanceForm.addEventListener("submit", function (e) {
+          // Optional: allow form to submit; just show status immediately
+          attendanceWindow.style.display = "block";
+          attendanceWindow.innerHTML = "<h3>Attendance is being marked...</h3><p>The face recognizer is running. Please wait for completion.</p>";
+        });
+      }
 
-/* ──────────────────────────────────────────────
-   🔹 5. Dynamic Attendance Viewer (Date Picker)
-   ────────────────────────────────────────────── */
+      if (startBtn) {
+        startBtn.addEventListener("click", () => {
+          console.log("Attendance started");
+        });
+      }
 
-// Function to fetch and show attendance data by selected date
-async function loadAttendanceByDate(dateStr) {
-  const tbody = document.getElementById("attendanceBody");
-  const dateText = document.getElementById("selectedDateText");
+      if (stopBtn && attendanceWindow) {
+        stopBtn.addEventListener("click", () => {
+          if (currentStream) {
+            currentStream.getTracks().forEach((t) => t.stop());
+            currentStream = null;
+          }
+          attendanceWindow.innerHTML = "<p>Attendance stopped.</p>";
+        });
+      }
 
-  tbody.innerHTML = "<tr><td colspan='3'>Loading...</td></tr>";
+      /* ──────────────────────────────────────────────
+         4. Dynamic Attendance Viewer (Date Picker)
+         ────────────────────────────────────────────── */
+      async function loadAttendanceByDate(dateStr) {
+        const tbody = qs("attendanceBody");
+        const dateText = qs("selectedDateText");
+        if (!tbody) return;
 
-  try {
-    // Fetch attendance records from Flask backend
-    const res = await fetch(`/get-attendance/${dateStr}`);
-    const data = await res.json();
+        tbody.innerHTML = "<tr><td colspan='3'>Loading...</td></tr>";
 
-    tbody.innerHTML = "";
-    if (data.length === 0) {
-      tbody.innerHTML = "<tr><td colspan='3'>No records found for this date.</td></tr>";
-    } else {
-      data.forEach(row => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${row.roll_no || '-'}</td>
-          <td>${row.name}</td>
-          <td class="${row.status === 'Present' ? 'status-present' : 'status-absent'}">${row.status}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-    dateText.textContent = dateStr;
-  } catch (err) {
-    console.error(err);
-    tbody.innerHTML = "<tr><td colspan='3'>Error loading data.</td></tr>";
-  }
-}
+        try {
+          const res = await fetch(`/get-attendance/${dateStr}`);
+          const data = await res.json();
 
-/* ──────────────────────────────────────────────
-   🔹 6. Quick Date Buttons (Today / Yesterday)
-   ────────────────────────────────────────────── */
-const todayBtn = document.getElementById("todayBtn");
-const yesterdayBtn = document.getElementById("yesterdayBtn");
-const datePicker = document.getElementById("attendanceDate");
+          tbody.innerHTML = "";
+          if (!Array.isArray(data) || data.length === 0) {
+            tbody.innerHTML = "<tr><td colspan='3'>No records found for this date.</td></tr>";
+          } else {
+            data.forEach((row) => {
+              const tr = document.createElement("tr");
+              tr.innerHTML = `
+                <td>${row.roll_no ?? '-'}</td>
+                <td>${row.name ?? '-'}</td>
+                <td class="${row.status === 'Present' ? 'status-present' : 'status-absent'}">${row.status ?? '-'}</td>
+              `;
+              tbody.appendChild(tr);
+            });
+          }
+          if (dateText) dateText.textContent = dateStr;
+        } catch (err) {
+          console.error(err);
+          tbody.innerHTML = "<tr><td colspan='3'>Error loading data.</td></tr>";
+        }
+      }
 
-// Load today's records
-todayBtn.addEventListener("click", () => {
-  const today = new Date().toISOString().split("T")[0];
-  datePicker.value = today;
-  loadAttendanceByDate(today);
-});
+      /* ──────────────────────────────────────────────
+         5. Quick Date Buttons (Today / Yesterday)
+         ────────────────────────────────────────────── */
+      const todayBtn = qs("todayBtn");
+      const yesterdayBtn = qs("yesterdayBtn");
+      const datePicker = qs("attendanceDate");
 
-// Load yesterday's records
-yesterdayBtn.addEventListener("click", () => {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  const yest = d.toISOString().split("T")[0];
-  datePicker.value = yest;
-  loadAttendanceByDate(yest);
-});
+      if (todayBtn && datePicker) {
+        todayBtn.addEventListener("click", () => {
+          const today = new Date().toISOString().split("T")[0];
+          datePicker.value = today;
+          loadAttendanceByDate(today);
+        });
+      }
 
-// When date manually selected from picker
-datePicker.addEventListener("change", (e) => {
-  loadAttendanceByDate(e.target.value);
-});
+      if (yesterdayBtn && datePicker) {
+        yesterdayBtn.addEventListener("click", () => {
+          const d = new Date();
+          d.setDate(d.getDate() - 1);
+          const yest = d.toISOString().split("T")[0];
+          datePicker.value = yest;
+          loadAttendanceByDate(yest);
+        });
+      }
 
-/* ──────────────────────────────────────────────
-   🔹 7. Default Page Behavior
-   ────────────────────────────────────────────── */
-// Don’t auto-load attendance on page reload
-// Default visible section will be the dashboard or first one in HTML
-// Attendance will load only when user clicks "View Attendance"
+      if (datePicker) {
+        datePicker.addEventListener("change", (e) => loadAttendanceByDate(e.target.value));
+      }
 
+      /* ──────────────────────────────────────────────
+         6. Student History (Pie)
+         ────────────────────────────────────────────── */
+      function viewStudentHistory(studentId, studentName) {
+        currentStudentId = studentId;
+        const modal = qs("historyModal");
+        const title = qs("studentHistoryTitle");
+        const monthInput = qs("historyMonth");
+        if (!modal || !title || !monthInput) return;
 
-// Total Students piechart
-let studentChart = null;
-let currentStudentId = null; // keep track of selected student
+        show(modal);
+        title.textContent = "Attendance History for " + studentName;
 
-function viewStudentHistory(studentId, studentName) {
-  currentStudentId = studentId; // save for month picker
-  document.getElementById("historyModal").style.display = "flex";
-  document.getElementById("studentHistoryTitle").textContent = 
-    "Attendance History for " + studentName;
+        const now = new Date();
+        const monthStr = now.toISOString().slice(0, 7); // YYYY-MM
+        monthInput.value = monthStr;
 
-  // Default month = current month
-  const monthInput = document.getElementById("historyMonth");
-  const now = new Date();
-  const monthStr = now.toISOString().slice(0,7); // YYYY-MM
-  monthInput.value = monthStr;
+        loadStudentHistory(studentId, now.getFullYear(), now.getMonth() + 1);
 
-  // Load data for current month
-  loadStudentHistory(studentId, now.getFullYear(), now.getMonth() + 1);
+        monthInput.onchange = () => {
+          const [year, month] = monthInput.value.split("-");
+          loadStudentHistory(studentId, Number(year), Number(month));
+        };
+      }
+      window.viewStudentHistory = viewStudentHistory; // exposed for inline onclick
 
-  // Add event listener for month change
-  monthInput.onchange = () => {
-    const [year, month] = monthInput.value.split("-");
-    loadStudentHistory(studentId, year, month);
-  };
-}
+      async function loadStudentHistory(studentId, year, month) {
+        try {
+          const res = await fetch(`/student-history/${studentId}/${year}/${month}`);
+          const data = await res.json();
 
-function loadStudentHistory(studentId, year, month) {
-  fetch(`/student-history/${studentId}/${year}/${month}`)
-    .then(res => res.json())
-    .then(data => {
-      const ctx = document.getElementById("studentPieChart").getContext("2d");
+          const canvas = qs("studentPieChart");
+          if (!canvas) return;
+          const ctx = canvas.getContext("2d");
 
-      // Destroy old chart
-      if (studentChart) studentChart.destroy();
+          if (studentChart) studentChart.destroy();
 
-      studentChart = new Chart(ctx, {
-        type: "pie",
-        data: {
-          labels: ["Present", "Absent"],
-          datasets: [{
-            data: [data.Present, data.Absent],
-            backgroundColor: ["#28a745", "#dc3545"],
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { position: "bottom" } }
+          const present = Number(data?.Present || 0);
+          const absent = Number(data?.Absent || 0);
+
+          studentChart = new Chart(ctx, {
+            type: "pie",
+            data: {
+              labels: ["Present", "Absent"],
+              datasets: [{ data: [present, absent] }]
+            },
+            options: { responsive: true, plugins: { legend: { position: "bottom" } } }
+          });
+
+          const counts = qs("historyCounts");
+          if (counts) counts.innerHTML = `✅ Present: ${present} day(s)<br>❌ Absent: ${absent} day(s)`;
+        } catch (err) {
+          console.error("Error loading history:", err);
+          const counts = qs("historyCounts");
+          if (counts) counts.textContent = "Failed to load history.";
+        }
+      }
+
+      function closeHistoryModal() {
+        const modal = qs("historyModal");
+        if (modal) hide(modal);
+      }
+      window.closeHistoryModal = closeHistoryModal;
+
+      // Close modals on ESC
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          closeHistoryModal();
+          closeDeleteModal();
         }
       });
 
-      // Show counts in text form
-      document.getElementById("historyCounts").innerHTML = 
-        `✅ Present: ${data.Present} days<br>❌ Absent: ${data.Absent} days`;
-    })
-    .catch(err => console.error("Error loading history:", err));
-}
+      /* ──────────────────────────────────────────────
+         7. Delete Student Logic
+         ────────────────────────────────────────────── */
+      let deleteTargetId = null;
 
-function closeHistoryModal() {
-  document.getElementById("historyModal").style.display = "none";
-}
-</script>
+      function confirmDeleteStudent(studentId, studentName) {
+        deleteTargetId = studentId;
+        const modal = qs("deleteModal");
+        const text = qs("deleteConfirmText");
+        if (!modal || !text) return;
+        text.innerHTML = `Are you sure you want to delete <strong>${studentName}</strong>?<br><br>This will remove their record and attendance data.`;
+        show(modal);
+      }
+      window.confirmDeleteStudent = confirmDeleteStudent;
 
+      function closeDeleteModal() {
+        const modal = qs("deleteModal");
+        if (modal) hide(modal);
+        deleteTargetId = null;
+      }
+      window.closeDeleteModal = closeDeleteModal;
+
+      const confirmDeleteBtn = qs("confirmDeleteBtn");
+      if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener("click", async () => {
+          if (!deleteTargetId) return;
+          try {
+            const res = await fetch(`/delete-student/${deleteTargetId}`, { method: "DELETE" });
+            const data = await res.json();
+
+            if (data?.success) {
+              alert("✅ " + data.success);
+              closeDeleteModal();
+              const btn = document.querySelector(`button[onclick*="${deleteTargetId}"][class*="danger"]`);
+              const row = btn ? btn.closest("tr") : null;
+              if (row) row.remove();
+            } else {
+              alert("⚠️ " + (data?.error || "Failed to delete student."));
+            }
+          } catch (err) {
+            alert("❌ Error while deleting student.");
+            console.error(err);
+          }
+        });
+      }
+
+      /* ──────────────────────────────────────────────
+         8. Default Page Behavior
+         ────────────────────────────────────────────── */
+      // Default visible section is the first (Start Attendance).
+      // Attendance will load only when user clicks "View Attendance".
+    </script>
   </body>
 </html>

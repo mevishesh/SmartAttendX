@@ -88,6 +88,17 @@ def is_logged_in():
 def home():
     return render_template("index.html")
 
+@app.after_request
+def add_no_cache_headers(response):
+    """
+    Add headers to prevent caching of sensitive pages.
+    This ensures back button can't load old dashboard after logout.
+    """
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
 # ---- Profile ----
 @app.route("/profile")
 def profile():
@@ -200,6 +211,44 @@ def api_register():
     except Exception as e:
         print("❌ Registration error:", str(e))
         return jsonify({"error": "Server error during registration"}), 500
+    #delete student in total student
+TRAINED_FACES_DIR = os.path.join(os.getcwd(), "face_recognition", "trained_faces")
+@app.route("/delete-student/<int:student_id>", methods=["DELETE"])
+def delete_student(student_id):
+    if not is_logged_in():
+        return jsonify({"error": "Unauthorized"}), 403
+
+    try:
+        # 🧩 Database cleanup
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        c.execute("DELETE FROM attendance WHERE student_id=?", (student_id,))
+        c.execute("DELETE FROM students WHERE id=?", (student_id,))
+        conn.commit()
+        conn.close()
+
+        # 🧠 Absolute base path (directory containing run.py)
+        base_dir = os.path.dirname(os.path.realpath(__file__))
+
+        # ✅ Construct absolute path to trained_faces/<student_id>
+        student_faces_folder = os.path.abspath(
+            os.path.join(base_dir, "face_recognition", "trained_faces", str(student_id))
+        )
+
+        print("[DEBUG] Target trained_faces path:", student_faces_folder)
+
+        if os.path.isdir(student_faces_folder):
+            shutil.rmtree(student_faces_folder)
+            print(f"[INFO] ✅ Deleted folder: {student_faces_folder}")
+        else:
+            print(f"[WARN] ⚠️ Folder not found at: {student_faces_folder}")
+
+        return jsonify({"success": "Student and their trained faces deleted successfully!"})
+
+    except Exception as e:
+        print("[ERROR] Delete student failed:", e)
+        return jsonify({"error": "Server error while deleting."}), 500
+
 
 # ---- Dashboard ----
 from datetime import datetime
