@@ -6,11 +6,19 @@ import platform
 import subprocess
 from datetime import datetime
 import shutil
-
+import firebase_admin
+from firebase_admin import credentials, auth as fb_auth
 from flask_mail import Mail, Message
 
 app = Flask(__name__)
 app.secret_key = "your-secret-key"
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+SERVICE_ACCOUNT_PATH = os.path.join(BASE_DIR, "firebase-service-account.json")
+
+if not firebase_admin._apps:
+    cred = credentials.Certificate(SERVICE_ACCOUNT_PATH)
+    firebase_admin.initialize_app(cred)
 
 # ---------------- Mail configuration ----------------
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
@@ -81,9 +89,21 @@ def init_db():
 init_db()
 
 def is_logged_in():
-    return "admin_id" in session
+    session_cookie = request.cookies.get(SESSION_COOKIE_NAME)
+    if not session_cookie:
+        return False
+    try:
+        decoded = fb_auth.verify_session_cookie(session_cookie, check_revoked=True)
+        session["admin_email"] = decoded.get("email")
+        return True
+    except Exception as e:
+        print("[WARN] Invalid session cookie:", e)
+        return False
+
 
 # ---------------- Routes ----------------
+
+
 @app.route("/")
 def home():
     return render_template("index.html")
@@ -211,6 +231,149 @@ def api_register():
     except Exception as e:
         print("❌ Registration error:", str(e))
         return jsonify({"error": "Server error during registration"}), 500
+    
+from flask import make_response, request
+import firebase_admin
+from firebase_admin import auth as fb_auth
+
+SESSION_COOKIE_NAME = "fb_session"
+SESSION_COOKIE_MAX_AGE = 60 * 60 * 24 * 5  # 5 days
+
+@app.post("/sessionLogin")
+def session_login():
+    data = request.get_json(force=True)
+    id_token = data.get("idToken")
+    print("[DEBUG] Received sessionLogin request")
+    print("[DEBUG] idToken:", str(id_token)[:30], "...")  # print first part only
+
+    if not id_token:
+        print("[ERROR] No idToken received!")
+        return jsonify({"error": "Missing idToken"}), 400
+
+    try:
+        session_cookie = fb_auth.create_session_cookie(id_token, expires_in=SESSION_COOKIE_MAX_AGE)
+        resp = make_response(jsonify({"success": True}))
+        resp.set_cookie(
+            key=SESSION_COOKIE_NAME,
+            value=session_cookie,
+            max_age=SESSION_COOKIE_MAX_AGE,
+            httponly=True,
+            samesite="Lax"
+        )
+        print("[INFO] Session cookie created successfully ✅")
+        return resp
+    except Exception as e:
+        print("[ERROR] SessionLogin failed:", e)
+        return jsonify({"error": "Invalid ID token"}), 401
+
+
+
+@app.post("/sessionLogout")
+def session_logout():
+    """Clear the Firebase session cookie and local session."""
+    resp = make_response(jsonify({"success": True}))
+    resp.delete_cookie(SESSION_COOKIE_NAME)
+    session.clear()
+    return resp
+
+
+
+@app.after_request
+def add_no_cache_headers(response):
+    """
+    Add headers to prevent cached pages from being shown after logout.
+    """
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+import random
+from datetime import datetime, timedelta
+
+# Temporary OTP cache (you can replace with DB table if needed)
+otp_cache = {}
+
+@app.route("/send-otp", methods=["POST"])
+def send_otp():
+    data = request.get_json(force=True)
+    email = (data.get("email") or "").strip()
+    if not email:
+        return jsonify({"error": "Email is required"}), 400
+
+    otp = random.randint(100000, 999999)
+    expiry = datetime.now() + timedelta(minutes=5)
+    otp_cache[email] = {"otp": str(otp), "expires_at": expiry}
+
+    try:
+        msg = Message(
+            "SmartAttendX 2-Step Verification",
+            recipients=[email],
+            body=f"Your verification code is {otp}. It expires in 5 minutes."
+        )
+        mail.send(msg)
+        print(f"[INFO] OTP {otp} sent to {email}")
+        return jsonify({"success": "OTP sent successfully"})
+    except Exception as e:
+        print("[ERROR] Mail send failed:", e)
+        return jsonify({"error": f"Mail send failed: {e}"}), 500
+
+
+
+
+@app.route("/verify-otp", methods=["POST"])
+def verify_otp():
+    data = request.get_json(force=True)
+    email = (data.get("email") or "").strip()
+    otp = (data.get("otp") or "").strip()
+
+    record = otp_cache.get(email)
+    if not record:
+        return jsonify({"error": "OTP not found. Request a new one."}), 400
+
+    if datetime.now() > record["expires_at"]:
+        del otp_cache[email]
+        return jsonify({"error": "OTP expired. Request a new one."}), 400
+
+    if otp != record["otp"]:
+        return jsonify({"error": "Invalid OTP"}), 401
+
+    # OTP valid
+    del otp_cache[email]
+    session["otp_verified_email"] = email
+    print(f"[INFO] ✅ OTP verified for {email}")
+
+    return jsonify({"success": "OTP verified"})
+
+
+    # OTP is valid — delete it
+    del otp_cache[email]
+    session["otp_verified_email"] = email
+
+    # ✅ Try creating a Firebase session cookie
+    try:
+        user = fb_auth.get_user_by_email(email)
+        custom_token = fb_auth.create_custom_token(user.uid)
+        id_token = custom_token.decode()
+
+        session_cookie = fb_auth.create_session_cookie(
+            id_token, expires_in=SESSION_COOKIE_MAX_AGE
+        )
+
+        resp = make_response(jsonify({"success": "OTP verified"}))
+        resp.set_cookie(
+            key=SESSION_COOKIE_NAME,
+            value=session_cookie,
+            max_age=SESSION_COOKIE_MAX_AGE,
+            httponly=True,
+            samesite="Lax"
+        )
+        print(f"[INFO] ✅ Session cookie created for {email}")
+        return resp
+    except Exception as e:
+        print("[ERROR] Firebase cookie creation failed:", e)
+        return jsonify({"error": "Internal error creating session cookie"}), 500
+
+
     #delete student in total student
 TRAINED_FACES_DIR = os.path.join(os.getcwd(), "face_recognition", "trained_faces")
 @app.route("/delete-student/<int:student_id>", methods=["DELETE"])
@@ -253,16 +416,42 @@ def delete_student(student_id):
 # ---- Dashboard ----
 from datetime import datetime
 
+from datetime import datetime
+
 @app.route('/dashboard')
 def dashboard():
     if not is_logged_in():
+        print("[WARN] Unauthorized access attempt — redirecting to login")
+        return redirect(url_for("login_page"))
+
+    admin_email = session.get("admin_email")
+    if not admin_email:
+        print("[ERROR] Missing admin email in session")
         return redirect(url_for("login_page"))
 
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
 
-    # All students for this admin
+    # ✅ Fetch or create admin record linked to Firebase email
+    c.execute("SELECT * FROM admins WHERE email = ?", (admin_email,))
+    admin = c.fetchone()
+    if not admin:
+        # Auto-create admin if new Firebase user
+        name = admin_email.split("@")[0]
+        c.execute("INSERT INTO admins (name, email, password) VALUES (?, ?, ?)",
+                  (name, admin_email, "firebase_user"))
+        conn.commit()
+        c.execute("SELECT * FROM admins WHERE email = ?", (admin_email,))
+        admin = c.fetchone()
+
+    session["admin_id"] = admin["id"]
+    session["admin_name"] = admin["name"]
+
+    # ✅ Define today's date before queries
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    # ✅ Fetch students belonging to this admin
     c.execute("""
         SELECT id, student_id, name, roll_no, email, guardian_no, guardian_email
         FROM students
@@ -270,7 +459,62 @@ def dashboard():
     """, (session["admin_id"],))
     students = c.fetchall()
 
-    today = datetime.now().strftime("%Y-%m-%d")
+    # ✅ Attendance stats (present / absent for today)
+    c.execute("""
+        SELECT COUNT(*) FROM attendance
+        WHERE date = ? AND status = 'Present' AND admin_id = ?
+    """, (today, session["admin_id"]))
+    present_count = c.fetchone()[0]
+
+    c.execute("""
+        SELECT COUNT(*) FROM attendance
+        WHERE date = ? AND status = 'Absent' AND admin_id = ?
+    """, (today, session["admin_id"]))
+    absent_count = c.fetchone()[0]
+
+    # ✅ Recent attendance records (joined with students)
+    attendance_records = c.execute("""
+        SELECT a.id, a.student_id, s.name, s.roll_no, a.date, a.status
+        FROM attendance a
+        JOIN students s ON a.student_id = s.id
+        WHERE a.admin_id = ?
+        ORDER BY a.date DESC
+    """, (session["admin_id"],)).fetchall()
+
+    attendance_records = [
+        dict(zip(['id', 'student_id', 'name', 'roll_no', 'date', 'status'], row))
+        for row in attendance_records
+    ]
+
+    conn.close()
+
+    # ✅ Render dashboard with filtered data
+    return render_template(
+        "dashboard.html",
+        admin=admin,
+        present_count=present_count,
+        absent_count=absent_count,
+        total_students=students,
+        datetime=datetime
+    )
+
+
+    # ✅ Fetch admin info based on Firebase email
+    c.execute("SELECT * FROM admins WHERE email = ?", (admin_email,))
+    admin = c.fetchone()
+
+    # ✅ If this is a new Firebase user (no DB record yet), create it
+    if not admin:
+        name = admin_email.split("@")[0]  # default name from email prefix
+        c.execute("INSERT INTO admins (name, email, password) VALUES (?, ?, ?)",
+                  (name, admin_email, "firebase_user"))
+        conn.commit()
+        c.execute("SELECT * FROM admins WHERE email = ?", (admin_email,))
+        admin = c.fetchone()
+
+    session["admin_id"] = admin["id"]
+    session["admin_name"] = admin["name"]
+
 
     # Get attendance stats for today
     c.execute("""
@@ -371,7 +615,9 @@ def dashboard():
 @app.route("/logout")
 def logout():
     session.clear()
-    return redirect(url_for("login_page"))
+    resp = make_response(redirect(url_for("login_page")))
+    resp.delete_cookie("fb_session")  # Delete Firebase session cookie too
+    return resp
 
 # ---- Attendance + Registration Scripts ----
 @app.route("/start-attendance", methods=["POST"])

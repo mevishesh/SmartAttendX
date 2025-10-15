@@ -1,94 +1,90 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-    <title>Register - SmartAttendX</title>
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='style.css') }}"
-    />
-    <script
-      src="https://kit.fontawesome.com/4e5dfafbd1.js"
-      crossorigin="anonymous"
-    ></script>
-  </head>
-  <body class="auth-body">
-    <div class="auth-container">
-      <!-- Left Panel -->
-      <div class="auth-info">
-        <h1>Create Account</h1>
-        <p>
-          Join thousands of institutions already using <span>smartAttendX</span>
-        </p>
-        <img src="{{ url_for('static', filename='images/logo.png') }}" 
-     alt="App Logo" 
-     class="logo">
-      </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Register - SmartAttendX</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <script src="https://kit.fontawesome.com/4e5dfafbd1.js" crossorigin="anonymous"></script>
+</head>
 
-      <!-- Right Panel -->
-      <div class="auth-form">
-        <h2>Register</h2>
-        <form id="registerForm">
-          <div class="input-group">
-            <i class="fas fa-user"></i>
-            <input type="text" id="reg-name" required placeholder="Full Name" />
-          </div>
-          <div class="input-group">
-            <i class="fas fa-envelope"></i>
-            <input type="email" id="reg-email" required placeholder="Email" />
-          </div>
-          <div class="input-group">
-            <i class="fas fa-lock"></i>
-            <input
-              type="password"
-              id="reg-password"
-              required
-              placeholder="Password"
-            />
-          </div>
-          <button type="submit" class="btn primary btn-block">Register</button>
-        </form>
-
-        <p class="alt-link">
-          Already have an account?
-          <a href="{{ url_for('login_page') }}">Login here</a>
-        </p>
-      </div>
+<body class="auth-body">
+  <div class="auth-container">
+    <div class="auth-info">
+      <h1>Create Account</h1>
+      <p>Join thousands of institutions already using <span>smartAttendX</span></p>
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="App Logo" class="logo">
     </div>
 
-    <script>
-      document.addEventListener("DOMContentLoaded", function () {
-        const form = document.getElementById("registerForm");
+    <div class="auth-form">
+      <h2>Register</h2>
+      <form id="registerForm">
+        <div class="input-group">
+          <i class="fas fa-user"></i>
+          <input type="text" id="reg-name" required placeholder="Full Name" />
+        </div>
+        <div class="input-group">
+          <i class="fas fa-envelope"></i>
+          <input type="email" id="reg-email" required placeholder="Email" />
+        </div>
+        <div class="input-group">
+          <i class="fas fa-lock"></i>
+          <input type="password" id="reg-password" required placeholder="Password" />
+        </div>
+        <button type="submit" class="btn primary btn-block">Register</button>
+      </form>
 
-        form.addEventListener("submit", async function (e) {
-          e.preventDefault();
+      <p class="alt-link">
+        Already have an account? <a href="{{ url_for('login_page') }}">Login here</a>
+      </p>
+    </div>
+  </div>
 
-          const name = document.getElementById("reg-name").value;
-          const email = document.getElementById("reg-email").value;
-          const password = document.getElementById("reg-password").value;
+  <!-- 🔥 Firebase Registration Script -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
 
-          try {
-            const res = await fetch("/register", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ name, email, password }),
-              credentials: "include",
-            });
+    const firebaseConfig = {
+      apiKey: "AIzaSyA3p7aGRwnoe-czU5l9iOsx-bGZ0c4ONyw",
+      authDomain: "smartattendx-2025.firebaseapp.com",
+      projectId: "smartattendx-2025",
+      storageBucket: "smartattendx-2025.appspot.com",
+      messagingSenderId: "169887480453",
+      appId: "1:169887480453:web:2e3b00159ca6d001d947ec",
+      measurementId: "G-DZJ4E83G4Y"
+    };
 
-            const data = await res.json();
-            if (data.success) {
-              alert("✅ " + data.success);
-              window.location.href = "/login-page";
-            } else {
-              alert("❌ " + (data.error || "Registration failed"));
-            }
-          } catch (err) {
-            alert("⚠️ Request failed. See console.");
-            console.error("Register error:", err);
-          }
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const form = document.getElementById("registerForm");
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const name = document.getElementById("reg-name").value.trim();
+      const email = document.getElementById("reg-email").value.trim();
+      const password = document.getElementById("reg-password").value.trim();
+
+      try {
+        // 🔹 Create user in Firebase Auth
+        const userCred = await createUserWithEmailAndPassword(auth, email, password);
+        console.log("Firebase user created:", userCred.user.uid);
+
+        // 🔹 Optionally create a matching record in your local DB (admins table)
+        await fetch("/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, email, password }),
+          credentials: "include"
         });
-      });
-    </script>
-  </body>
+
+        alert("✅ Registration successful! You can now log in.");
+        window.location.href = "/login-page";
+      } catch (err) {
+        alert("❌ Registration failed: " + err.message);
+      }
+    });
+  </script>
+</body>
 </html>

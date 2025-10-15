@@ -398,6 +398,11 @@
     </div>
 
     <script>
+       window.onpageshow = function(event) {
+    if (event.persisted || performance.getEntriesByType("navigation")[0].type === "back_forward") {
+      window.location.href = "/login-page";
+    }
+  };
       /* ──────────────────────────────────────────────
          0. Utilities / Globals
          ────────────────────────────────────────────── */
