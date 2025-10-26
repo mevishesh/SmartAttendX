@@ -179,28 +179,19 @@ def login_page():
     return render_template("login.html")
 
 @app.route("/login", methods=["POST"])
-def api_login():
-    try:
-        data = request.get_json(force=True)
-        email = (data.get("email") or "").strip()
-        password = data.get("password") or ""
+def login():
+    data = request.get_json()
+    email = data.get("email")
+    password = data.get("password")
 
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
-        c = conn.cursor()
-        c.execute("SELECT * FROM admins WHERE email = ? AND password = ?", (email, password))
-        admin = c.fetchone()
-        conn.close()
+    # Example check — replace with your database logic
+    user = query_user_by_email(email)
+    if user and user["password"] == password:
+        session["user"] = email
+        return jsonify({"success": True})
+    else:
+        return jsonify({"success": False, "error": "Invalid email or password"})
 
-        if admin:
-            session["admin_id"] = admin["id"]
-            session["admin_name"] = admin["name"]
-            return jsonify({"success": "Login successful"})
-        else:
-            return jsonify({"error": "Invalid credentials"}), 401
-    except Exception as e:
-        print("❌ Login error:", str(e))
-        return jsonify({"error": "Server error during login"}), 500
 
 @app.route("/register-page")
 def register_page():
